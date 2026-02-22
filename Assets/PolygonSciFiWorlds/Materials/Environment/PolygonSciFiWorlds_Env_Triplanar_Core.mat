@@ -39,7 +39,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: c7ea5ea2a4fb47b419c0eba8ac36b9aa, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Base_Normal:
@@ -119,7 +119,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: c7ea5ea2a4fb47b419c0eba8ac36b9aa, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Main_Normals:
@@ -349,10 +349,10 @@ Material:
     - _smoothness: 0.175
     - _translkucency: 0.443
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 1, g: 0.8283019, b: 0.9713837, a: 1}
     - _CliffColour: {r: 0, g: 0.110750526, b: 0.17647058, a: 0}
     - _Cliff_Colour: {r: 0.61764705, g: 0.20891005, b: 0.20891005, a: 0}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 0.8283019, b: 0.97138363, a: 1}
     - _Color2: {r: 0.38235295, g: 0.35319176, b: 0.33737025, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmissiveColor: {r: 1, g: 1, b: 1, a: 0}

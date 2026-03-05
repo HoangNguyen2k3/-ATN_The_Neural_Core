@@ -30,10 +30,10 @@ namespace Aircraft {
             //convert
             if (pitchValue == -1f) pitchValue = 2f;
             if (yawValue == -1f) yawValue = 2f;
-            var continuous = actionsOut.ContinuousActions;
-            continuous[0] = pitchValue;
-            continuous[1] = yawValue;
-            continuous[2] = boostValue;
+            var continuous = actionsOut.DiscreteActions;
+            continuous[0] = (int)pitchValue;
+            continuous[1] = (int)yawValue;
+            continuous[2] = (int)boostValue;
 
         }
         public void OnDestroy() {

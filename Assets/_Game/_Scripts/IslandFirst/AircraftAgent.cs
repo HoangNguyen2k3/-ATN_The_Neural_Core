@@ -67,15 +67,15 @@ namespace Aircraft {
 
             if (frozen) return;
 
-            pitchChange = actions.ContinuousActions[0];//up or none
+            pitchChange = actions.DiscreteActions[0];//up or none
             if (pitchChange == 2) {
                 pitchChange = -1f;//down
             }
-            yawChange = actions.ContinuousActions[1];
+            yawChange = actions.DiscreteActions[1];
             if (yawChange == 2) {
                 yawChange = -1f;//left
             }
-            boost = actions.ContinuousActions[2] == 1;
+            boost = actions.DiscreteActions[2] == 1;
             if (boost && !trailRenderer.emitting) trailRenderer.Clear();
             trailRenderer.emitting = boost;
             ProcessMovement();

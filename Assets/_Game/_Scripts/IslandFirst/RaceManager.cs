@@ -32,7 +32,7 @@ namespace Aircraft {
 
         private CinemachineVirtualCamera virtualCamera;
         private CountdownUIController countdownUI;
-        private PauseMenuController pauseMenu;
+        //private PauseMenuController pauseMenu;
         private HUDController hud;
         private GameoverUIController gameoverUI;
         private AircraftArea aircraftArea;
@@ -119,7 +119,7 @@ namespace Aircraft {
         private void Awake() {
             hud = FindObjectOfType<HUDController>();
             countdownUI = FindObjectOfType<CountdownUIController>();
-            pauseMenu = FindObjectOfType<PauseMenuController>();
+            //pauseMenu = FindObjectOfType<PauseMenuController>();
             gameoverUI = FindObjectOfType<GameoverUIController>();
             virtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
             aircraftArea = FindObjectOfType<AircraftArea>();
@@ -157,7 +157,7 @@ namespace Aircraft {
 
             // Hide UI
             hud.gameObject.SetActive(false);
-            pauseMenu.gameObject.SetActive(false);
+            //pauseMenu.gameObject.SetActive(false);
             countdownUI.gameObject.SetActive(false);
             gameoverUI.gameObject.SetActive(false);
 
@@ -194,7 +194,7 @@ namespace Aircraft {
         private void PauseInputPerformed(InputAction.CallbackContext obj) {
             if (GameManager.Instance.GameState == GameState.Playing) {
                 GameManager.Instance.GameState = GameState.Paused;
-                pauseMenu.gameObject.SetActive(true);
+                //pauseMenu.gameObject.SetActive(true);
             }
         }
 

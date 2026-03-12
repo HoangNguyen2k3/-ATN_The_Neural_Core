@@ -24,7 +24,7 @@ namespace Aircraft {
         public int stepTimeout = 300;
         public int NextCheckpointIndex { get; set; }
         //Component keep track of
-        private AircraftArea area;
+        public AircraftArea area;
         new private Rigidbody rigid;
         private TrailRenderer trailRenderer;
 

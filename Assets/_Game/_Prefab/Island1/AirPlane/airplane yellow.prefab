@@ -196,7 +196,7 @@ TrailRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Time: 5
+  m_Time: 10
   m_PreviewTimeScale: 1
   m_Parameters:
     serializedVersion: 3
@@ -215,7 +215,7 @@ TrailRenderer:
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 1
-        value: 0
+        value: 1
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -349,6 +349,7 @@ MonoBehaviour:
   meshObj: {fileID: 3393817028657415000}
   explosionEffect: {fileID: 8878374519361737087}
   stepTimeout: 300
+  area: {fileID: 0}
 --- !u!114 &-5968881693952011683
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,0 +1,65 @@
+{
+    "AircraftLearn": {
+        "checkpoints": [
+            {
+                "steps": 499974,
+                "file_path": "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-499974.onnx",
+                "reward": -0.5459095182872954,
+                "creation_time": 1773541801.746564,
+                "auxillary_file_paths": [
+                    "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-499974.pt"
+                ]
+            },
+            {
+                "steps": 999907,
+                "file_path": "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-999907.onnx",
+                "reward": 1.1464642814795176,
+                "creation_time": 1773542900.9385662,
+                "auxillary_file_paths": [
+                    "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-999907.pt"
+                ]
+            },
+            {
+                "steps": 1499975,
+                "file_path": "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-1499975.onnx",
+                "reward": 1.1194670266575284,
+                "creation_time": 1773544103.6082737,
+                "auxillary_file_paths": [
+                    "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-1499975.pt"
+                ]
+            },
+            {
+                "steps": 1979707,
+                "file_path": "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-1979707.onnx",
+                "reward": 1.1565537501213163,
+                "creation_time": 1773545258.2832017,
+                "auxillary_file_paths": [
+                    "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-1979707.pt"
+                ]
+            },
+            {
+                "steps": 1991192,
+                "file_path": "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-1991192.onnx",
+                "reward": 0.562689082963126,
+                "creation_time": 1773545404.2648535,
+                "auxillary_file_paths": [
+                    "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-1991192.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 1991192,
+            "file_path": "results\\AircraftLearning2\\AircraftLearn.onnx",
+            "reward": 0.562689082963126,
+            "creation_time": 1773545404.2648535,
+            "auxillary_file_paths": [
+                "results\\AircraftLearning2\\AircraftLearn\\AircraftLearn-1991192.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

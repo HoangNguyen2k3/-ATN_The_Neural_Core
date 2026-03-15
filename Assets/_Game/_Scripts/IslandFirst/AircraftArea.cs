@@ -13,6 +13,8 @@ namespace Aircraft {
         [Tooltip("Choose training mode")]
         public bool isTrainingMode;
 
+        [Header("=================MenuScene==================")]
+        public Transform airCraftTarget;
         public List<AircraftAgent> list_aircraftAgent { get; private set; }
         public List<GameObject> list_checkpoint { get; private set; }
         private void Awake() {

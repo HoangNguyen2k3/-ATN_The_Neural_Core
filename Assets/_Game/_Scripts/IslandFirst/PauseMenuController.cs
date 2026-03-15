@@ -1,36 +1,27 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using static Aircraft.RaceManager;
 
-namespace Aircraft
-{
-    public class PauseMenuController : MonoBehaviour
-    {
-        private void Start()
-        {
+namespace Aircraft {
+    public class PauseMenuController : MonoBehaviour {
+        private void Start() {
             GameManager.Instance.OnStateChange += OnStateChange;
         }
 
-        private void OnStateChange()
-        {
-            if (GameManager.Instance.GameState == GameState.Playing)
-            {
+        private void OnStateChange() {
+            if (RaceManager.Ins.CurrentState == GameState.Playing) {
                 gameObject.SetActive(false);
             }
         }
 
-        public void ResumeButtonClicked()
-        {
-            GameManager.Instance.GameState = GameState.Playing;
+        public void ResumeButtonClicked() {
+            RaceManager.Ins.SetGameState(GameState.Playing);
         }
 
-        public void MainMenuButtonClicked()
-        {
-            GameManager.Instance.LoadLevel("MainMenu", GameState.MainMenu);
+        public void MainMenuButtonClicked() {
+            GameManager.Instance.LoadLevel("MainMenu");
         }
 
-        private void OnDestroy()
-        {
+        private void OnDestroy() {
             if (GameManager.Instance != null) GameManager.Instance.OnStateChange -= OnStateChange;
         }
     }

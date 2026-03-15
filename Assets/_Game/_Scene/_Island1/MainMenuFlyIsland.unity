@@ -211,10 +211,16 @@ MonoBehaviour:
   m_MultiSelect: 0
   m_Options:
     m_Options:
+    - m_Text: Easy
+      m_Image: {fileID: 0}
+      m_Color: {r: 1, g: 1, b: 1, a: 1}
     - m_Text: Normal
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 1, b: 1, a: 1}
     - m_Text: Hard
+      m_Image: {fileID: 0}
+      m_Color: {r: 1, g: 1, b: 1, a: 1}
+    - m_Text: Imposible
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_OnValueChanged:
@@ -636,7 +642,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -318}
+  m_AnchoredPosition: {x: 0, y: -303}
   m_SizeDelta: {x: 800, y: 351}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &408070621
@@ -657,7 +663,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 1
-  m_Spacing: 0
+  m_Spacing: 30
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
@@ -2135,7 +2141,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Normal
+  m_text: Easy
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 862ce2fa186df26499cd2faa6719e398, type: 2}
   m_sharedMaterial: {fileID: -6474894219057844866, guid: 862ce2fa186df26499cd2faa6719e398, type: 2}
@@ -2757,7 +2763,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 678d1a3d4243c9a45847fbacc85d79f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  canvasLoading: {fileID: 0}
+  ui_fakeLoading: {fileID: 0}
   numberLevel: 1
+  gameDataConfig: {fileID: 0}
 --- !u!4 &2037952398
 Transform:
   m_ObjectHideFlags: 0

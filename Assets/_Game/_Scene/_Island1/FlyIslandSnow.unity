@@ -2196,7 +2196,13 @@ MonoBehaviour:
   checkpointBonusTime: 15
   difficultyModels:
   - difficulty: 0
+    model: {fileID: 5022602860645237092, guid: 306619fa412754341aca3e1548395482, type: 3}
+  - difficulty: 1
+    model: {fileID: 5022602860645237092, guid: ab30c542d3b020d45bef4291e94815b0, type: 3}
+  - difficulty: 2
     model: {fileID: 5022602860645237092, guid: 211faf7bcbdc3c746be5c5f9726e4152, type: 3}
+  - difficulty: 3
+    model: {fileID: 5022602860645237092, guid: 9b2b4d5a29fe4ed49b95a4281fc72667, type: 3}
 --- !u!4 &1164949065
 Transform:
   m_ObjectHideFlags: 0

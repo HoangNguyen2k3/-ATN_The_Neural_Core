@@ -17,6 +17,7 @@ public class NPCPatrol : MonoBehaviour {
     private float waitTimer = 0f;
 
     void Start() {
+        ShuffleWaypoints();
         agent = GetComponent<NavMeshAgent>();
         if (waypoints.Length > 0) {
             agent.SetDestination(waypoints[currentPoint].position);
@@ -47,6 +48,15 @@ public class NPCPatrol : MonoBehaviour {
                 waitTimer = waitTime;
                 agent.isStopped = true;
             }
+        }
+    }
+    public void ShuffleWaypoints() {
+        for (int i = waypoints.Length - 1; i > 0; i--) {
+            int randomIndex = Random.Range(0, i + 1);
+
+            Transform temp = waypoints[i];
+            waypoints[i] = waypoints[randomIndex];
+            waypoints[randomIndex] = temp;
         }
     }
 }

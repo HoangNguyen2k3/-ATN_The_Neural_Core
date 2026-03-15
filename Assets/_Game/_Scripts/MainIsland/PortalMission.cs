@@ -2,38 +2,68 @@
 using UnityEngine;
 
 public class PortalMission : MonoBehaviour {
-    private string sceneToLoad; // Tên của Scene nhiệm vụ muốn chuyển đến
+    [Header("Cấu hình Dữ Liệu (Scriptable Object)")]
+    public PortalType myPortalType; // Cổng này là cổng nào?
+
+    [Header("Trạng thái In-game (Có thể thay đổi)")]
     public bool isOpenPortal = true;
+    public bool hasMemoryStone = false;
+
+    [Header("Cấu hình Scene")]
     public CurrentIsland currentIsland;
+
     [Header("=============Island1================")]
     public int numberOfLevel = 0;
+
+    [HideInInspector]
+    public string sceneToLoad;
+
+    // Biến để lưu trữ data text lấy được từ SO
+    [HideInInspector]
+    public PortalInfo myTextData;
+
     private void Start() {
         sceneToLoad = currentIsland.ToString();
+
+        // Lấy dữ liệu Text từ Database ngay khi game bắt đầu
+        if (GameManager.Instance != null) {
+            myTextData = GameManager.Instance.gameDataConfig.databaseSO.GetPortalData(myPortalType);
+            if (myTextData == null) {
+                Debug.LogError($"Không tìm thấy dữ liệu Text cho cổng: {myPortalType} trong Database!");
+            }
+        }
     }
+
     private void OnTriggerEnter(Collider other) {
-        // Kiểm tra nếu đối tượng va chạm là Player và cổng đã mở
-        if (other.CompareTag("Player") && isOpenPortal) {
-            TransportToMission();
-        }
-        else if (other.CompareTag("Player") && !isOpenPortal) {
-            Debug.Log("Cổng đang đóng. Bạn cần hoàn thành điều kiện để mở!");
+        if (other.CompareTag("Player") && myTextData != null) {
+            // Truyền chính script này sang UI để hiển thị
+            PortalUIManager.Instance.ShowDialog(this);
         }
     }
-    private void TransportToMission() {
+
+    private void OnTriggerExit(Collider other) {
+        if (other.CompareTag("Player")) {
+            PortalUIManager.Instance.HideDialog();
+        }
+    }
+
+    public void TransportToMission() {
         SetupDataToMission();
+
         if (!string.IsNullOrEmpty(sceneToLoad)) {
             Cursor.lockState = CursorLockMode.None;
             GameManager.Instance.ShowFakeLoadingGame(sceneToLoad);
         }
         else {
-            Debug.LogWarning("Chưa nhập tên Scene trong Inspector!");
+            Debug.LogWarning("Tên Scene trống! Kiểm tra lại Enum CurrentIsland.");
         }
     }
+
     public void SetupDataToMission() {
         switch (currentIsland) {
             case CurrentIsland.MainMenuFlyIsland:
-                GameManager.Instance.numberLevel = numberOfLevel; break;
-
+                GameManager.Instance.numberLevel = numberOfLevel;
+                break;
         }
     }
 }

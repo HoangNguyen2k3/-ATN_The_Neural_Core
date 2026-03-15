@@ -21,7 +21,7 @@ namespace Aircraft {
         private void Start() {
             difficultyDropdown.ClearOptions();
             difficultyDropdown.AddOptions(Enum.GetNames(typeof(GameDifficulty)).ToList());
-            selectedDifficulty = GameDifficulty.Normal;
+            selectedDifficulty = GameDifficulty.Easy;
             Setup();
         }
         public void Setup() {
@@ -37,6 +37,7 @@ namespace Aircraft {
 
         public void SetDifficulty(int difficultyIndex) {
             selectedDifficulty = (GameDifficulty)difficultyIndex;
+            Debug.Log(selectedDifficulty + "SET");
         }
         public void StartButtonClicked() {
             GameManager.Instance.GameDifficulty = selectedDifficulty;

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82308161be25c7244ac27abe12515d33, type: 3}
+  m_Name: PortalData
+  m_EditorClassIdentifier: 
+  portalList:
+  - portalType: 1
+    areaName: Red Sand Canyon
+    areaDescription: High-speed flight training zone. Howling winds and severe sandstorms
+      will reduce your visibility. Master your altitude control and get familiar
+      with the aircraft's handling.
+    unlockCondition: Unlock
+  - portalType: 0
+    areaName: Eternal Peaks
+    areaDescription: A brutal, unforgiving blizzard track. Sub-zero temperatures
+      will affect your engine's performance. Watch out for sudden ice cliffs and
+      narrow frozen passes!
+    unlockCondition: Complete Red Sand Canyon with Rank B or higher.
+  - portalType: 2
+    areaName: Zeta Complex
+    areaDescription: 'A heavily fortified outpost patrolled by automated security
+      drones. Objective: Infiltrate the perimeter, bypass the alarm systems, and
+      retrieve the Memory Stone. Stay out of their line of sight.'
+    unlockCondition: Collect 2 Stone Memory

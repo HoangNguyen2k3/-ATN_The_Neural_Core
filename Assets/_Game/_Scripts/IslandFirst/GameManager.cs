@@ -5,8 +5,10 @@ using UnityEngine.SceneManagement;
 
 namespace Aircraft {
     public enum GameDifficulty {
+        Easy,
         Normal,
-        Hard
+        Hard,
+        Imposible
     }
 
     public delegate void OnStateChangeHandler();
@@ -23,6 +25,8 @@ namespace Aircraft {
         [Header("=============Data Change Scene==============")]
         public GameDifficulty GameDifficulty { get; set; }
         public int numberLevel = 0;
+        [Header("=============Data Game======================")]
+        public GameDataConfig gameDataConfig;
         private void Awake() {
             if (Instance == null) {
                 Instance = this;

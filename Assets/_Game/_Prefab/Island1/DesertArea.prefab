@@ -10222,7 +10222,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 306619fa412754341aca3e1548395482, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 9b2b4d5a29fe4ed49b95a4281fc72667, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: AircraftLearn
@@ -41794,7 +41794,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 306619fa412754341aca3e1548395482, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 9b2b4d5a29fe4ed49b95a4281fc72667, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: AircraftLearn
@@ -58054,7 +58054,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 306619fa412754341aca3e1548395482, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 9b2b4d5a29fe4ed49b95a4281fc72667, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: AircraftLearn
@@ -63649,7 +63649,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 306619fa412754341aca3e1548395482, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 9b2b4d5a29fe4ed49b95a4281fc72667, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: AircraftLearn

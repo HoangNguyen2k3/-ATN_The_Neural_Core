@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: gameConfigData
   m_EditorClassIdentifier: 
   databaseSO: {fileID: 11400000, guid: 39673d5cd19c04649ad5d9ce3991d141, type: 2}
+  npcDialogueDB: {fileID: 11400000, guid: c8ca577a15e68d444877698fcba33e58, type: 2}

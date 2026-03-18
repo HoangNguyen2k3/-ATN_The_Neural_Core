@@ -2053,7 +2053,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1249677135}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.060797524, y: -0.8104144, z: 0.085482426, w: 0.5763897}
+  m_LocalRotation: {x: 0.060797524, y: -0.81041443, z: 0.08548243, w: 0.57638955}
   m_LocalPosition: {x: -47.160656, y: 54.47, z: -77.39764}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3026,7 +3026,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1750315970}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.060797524, y: -0.8104144, z: 0.085482426, w: 0.5763897}
+  m_LocalRotation: {x: 0.060797524, y: -0.81041443, z: 0.08548243, w: 0.57638955}
   m_LocalPosition: {x: -47.160656, y: 54.47, z: -77.39764}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3501,10 +3501,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: DesertArea
       objectReference: {fileID: 0}
+    - target: {fileID: 1425612807385174245, guid: 7c0022e5e2303dd4a8611822c6757126, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 387ea01eba303c04a81c25118e6b9cf6, type: 2}
     - target: {fileID: 2404287553186744783, guid: 7c0022e5e2303dd4a8611822c6757126, type: 3}
       propertyPath: m_Waypoints.Array.data[9].position.y
       value: 14.451744
       objectReference: {fileID: 0}
+    - target: {fileID: 2991121781339066349, guid: 7c0022e5e2303dd4a8611822c6757126, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 387ea01eba303c04a81c25118e6b9cf6, type: 2}
     - target: {fileID: 3228364778834426088, guid: 7c0022e5e2303dd4a8611822c6757126, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -3545,6 +3553,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7104615179953893481, guid: 7c0022e5e2303dd4a8611822c6757126, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 387ea01eba303c04a81c25118e6b9cf6, type: 2}
+    - target: {fileID: 8279015095470493996, guid: 7c0022e5e2303dd4a8611822c6757126, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 387ea01eba303c04a81c25118e6b9cf6, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

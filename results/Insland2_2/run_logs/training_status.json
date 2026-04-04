@@ -1,0 +1,47 @@
+{
+    "SeekerDrone": {
+        "checkpoints": [
+            {
+                "steps": 499980,
+                "file_path": "results\\Insland2_2\\SeekerDrone\\SeekerDrone-499980.onnx",
+                "reward": null,
+                "creation_time": 1774398268.7524407,
+                "auxillary_file_paths": [
+                    "results\\Insland2_2\\SeekerDrone\\SeekerDrone-499980.pt"
+                ]
+            },
+            {
+                "steps": 999924,
+                "file_path": "results\\Insland2_2\\SeekerDrone\\SeekerDrone-999924.onnx",
+                "reward": null,
+                "creation_time": 1774399021.2210145,
+                "auxillary_file_paths": [
+                    "results\\Insland2_2\\SeekerDrone\\SeekerDrone-999924.pt"
+                ]
+            },
+            {
+                "steps": 1209388,
+                "file_path": "results\\Insland2_2\\SeekerDrone\\SeekerDrone-1209388.onnx",
+                "reward": 24.521210953593254,
+                "creation_time": 1774399354.753042,
+                "auxillary_file_paths": [
+                    "results\\Insland2_2\\SeekerDrone\\SeekerDrone-1209388.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 1209388,
+            "file_path": "results\\Insland2_2\\SeekerDrone.onnx",
+            "reward": 24.521210953593254,
+            "creation_time": 1774399354.753042,
+            "auxillary_file_paths": [
+                "results\\Insland2_2\\SeekerDrone\\SeekerDrone-1209388.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

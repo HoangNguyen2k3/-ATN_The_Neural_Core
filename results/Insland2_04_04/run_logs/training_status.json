@@ -2,42 +2,6 @@
     "SeekerDrone": {
         "checkpoints": [
             {
-                "steps": 3166111,
-                "file_path": "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3166111.onnx",
-                "reward": -0.4105890543432906,
-                "creation_time": 1775311617.1975586,
-                "auxillary_file_paths": [
-                    "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3166111.pt"
-                ]
-            },
-            {
-                "steps": 3180559,
-                "file_path": "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3180559.onnx",
-                "reward": -0.4167161202368637,
-                "creation_time": 1775311732.6287374,
-                "auxillary_file_paths": [
-                    "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3180559.pt"
-                ]
-            },
-            {
-                "steps": 3238291,
-                "file_path": "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3238291.onnx",
-                "reward": -0.33987970479453605,
-                "creation_time": 1775312249.971378,
-                "auxillary_file_paths": [
-                    "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3238291.pt"
-                ]
-            },
-            {
-                "steps": 3499671,
-                "file_path": "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3499671.onnx",
-                "reward": 0.7885831099313995,
-                "creation_time": 1775313253.9352558,
-                "auxillary_file_paths": [
-                    "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3499671.pt"
-                ]
-            },
-            {
                 "steps": 3899767,
                 "file_path": "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3899767.onnx",
                 "reward": 1.4199068640203525,
@@ -45,15 +9,51 @@
                 "auxillary_file_paths": [
                     "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3899767.pt"
                 ]
+            },
+            {
+                "steps": 3999995,
+                "file_path": "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3999995.onnx",
+                "reward": 1.4264627160238368,
+                "creation_time": 1775390176.8866217,
+                "auxillary_file_paths": [
+                    "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3999995.pt"
+                ]
+            },
+            {
+                "steps": 4499547,
+                "file_path": "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-4499547.onnx",
+                "reward": 1.7715441188257601,
+                "creation_time": 1775391561.037456,
+                "auxillary_file_paths": [
+                    "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-4499547.pt"
+                ]
+            },
+            {
+                "steps": 4999931,
+                "file_path": "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-4999931.onnx",
+                "reward": 1.8393824190522234,
+                "creation_time": 1775392984.8361628,
+                "auxillary_file_paths": [
+                    "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-4999931.pt"
+                ]
+            },
+            {
+                "steps": 5383099,
+                "file_path": "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-5383099.onnx",
+                "reward": 2.072811149707478,
+                "creation_time": 1775394109.7546506,
+                "auxillary_file_paths": [
+                    "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-5383099.pt"
+                ]
             }
         ],
         "final_checkpoint": {
-            "steps": 3899767,
+            "steps": 5383099,
             "file_path": "results\\Insland2_04_04\\SeekerDrone.onnx",
-            "reward": 1.4199068640203525,
-            "creation_time": 1775314183.0245106,
+            "reward": 2.072811149707478,
+            "creation_time": 1775394109.7546506,
             "auxillary_file_paths": [
-                "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-3899767.pt"
+                "results\\Insland2_04_04\\SeekerDrone\\SeekerDrone-5383099.pt"
             ]
         }
     },

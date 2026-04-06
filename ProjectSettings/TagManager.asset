@@ -8,6 +8,7 @@ TagManager:
   - agent
   - Wall
   - Obstacle
+  - HumanPlayer
   layers:
   - Default
   - TransparentFX
@@ -15,7 +16,7 @@ TagManager:
   - Ground
   - Water
   - UI
-  - 
+  - Obstacle
   - 
   - 
   - 

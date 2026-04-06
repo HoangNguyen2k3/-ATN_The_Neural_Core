@@ -21,7 +21,11 @@ public class OpenScenes : Editor {
     }
     [MenuItem("Open Scenes/_05_DroneIsland_#5")]
     public static void OpenDroneIsland() {
-        OpenScene("_Game/_Scene/DroneIsland");
+        OpenScene("_Game/_Scene/_Island2/Island2Scene");
+    }
+    [MenuItem("Open Scenes/_06_MenuDroneIsland_#6")]
+    public static void OpenMenuDroneIsland() {
+        OpenScene("_Game/_Scene/_Island2/MainMenuIsland2");
     }
     private static void OpenScene(string path) {
         if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) {

@@ -5,12 +5,15 @@ using UnityEngine;
 
 public class AdvancedSeekerDrone : Agent {
     [Header("Cài đặt")]
-    public float moveSpeed = 15f; // Tăng nhẹ vì dùng AddForce
-    public float maxSpeed = 10f;  // Giới hạn vận tốc tối đa
+    public float moveSpeed = 10f;
     public float turnSpeed = 200f;
+    public bool allowBackward = false;
+    public float minimumForwardInput = 0.15f;
+    public float idleSpeedPenalty = -0.002f;
+    public float idleSpeedThreshold = 0.4f;
 
     [Header("Tham chiếu")]
-    public MapManager mapManager;
+    public MapManager mapManager; // Kéo object chứa MapManager vào đây
 
     private Rigidbody rb;
 
@@ -20,154 +23,144 @@ public class AdvancedSeekerDrone : Agent {
             mapManager = FindFirstObjectByType<MapManager>();
         }
 
-        if (rb == null || mapManager == null) {
-            Debug.LogError("Thiếu tham chiếu Component hoặc MapManager!", this);
+        if (rb == null) {
+            Debug.LogError("AdvancedSeekerDrone requires a Rigidbody component.", this);
             enabled = false;
             return;
         }
 
-        // Cho phép MaxStep = 0 để chạy vô hạn trong lúc test Gameplay
-        // if (MaxStep <= 0) MaxStep = 1500;
+        if (mapManager == null) {
+            Debug.LogError("AdvancedSeekerDrone requires a MapManager reference.", this);
+            enabled = false;
+            return;
+        }
 
-        // Khóa xoay X, Z để không lật, và khóa luôn Vị trí Y để bay lơ lửng ngang tầm mắt
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
+        if (MaxStep <= 0) {
+            MaxStep = 1500;
+        }
+
+        // Chỉ khóa xoay X và Z để không bị lật ngửa, cho phép rơi tự do theo trục Y
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
 
     public override void OnEpisodeBegin() {
+        // Khi Drone bị timeout (hết MaxStep), ML-Agents sẽ gọi hàm này.
+        // Báo MapManager reset lại toàn bộ map.
+        //mapManager.ResetMap(); // Đã bật lại để Reset hoạt động
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-
-        // FIX: Chỉ tự reset vị trí khi KHÔNG có màn reset toàn bộ đang diễn ra
-        // (Nếu isResetting = true, ResetMap() đã lo việc này, tránh double-spawn)
-        if (mapManager != null && !mapManager.isResetting) {
-            mapManager.ResetSingleDronePosition(this);
-        }
     }
 
+    // CHO PHÉP ĐIỀU KHIỂN BẰNG BÀN PHÍM ĐỂ TEST TRONG EDITOR
     public override void Heuristic(in ActionBuffers actionsOut) {
         var continuousActionsOut = actionsOut.ContinuousActions;
-        continuousActionsOut[0] = Input.GetAxis("Vertical");
-        continuousActionsOut[1] = Input.GetAxis("Horizontal");
+        continuousActionsOut[0] = Input.GetAxis("Vertical");   // Tiến/Lùi (W/S)
+        continuousActionsOut[1] = Input.GetAxis("Horizontal"); // Xoay trái/phải (A/D)
     }
 
     public override void CollectObservations(VectorSensor sensor) {
-        // --- OBSERVATION SPACE: 18 giá trị ---
-
-        // [1-3] Vận tốc hiện tại trong hệ tọa độ của Drone (3)
         sensor.AddObservation(transform.InverseTransformDirection(rb.linearVelocity));
 
-        // [4-5] Vị trí chuẩn hóa trong map (2)
-        // Drone biết mình đang ở góc nào của bản đồ (0.0 → 1.0)
+        // TÍNH TOÁN VÀ TRUYỀN 9 THÔNG SỐ HEATMAP (LƯỚI 3x3) CHO AI "NGỬI"
         Vector2Int myCell = mapManager.WorldToGrid(transform.position);
-        sensor.AddObservation((float)myCell.x / mapManager.gridResolutionX);
-        sensor.AddObservation((float)myCell.y / mapManager.gridResolutionZ);
+        int myCellX = myCell.x;
+        int myCellZ = myCell.y;
 
-        // [6-14] 9 thông số Heatmap lân cận 3x3 (9)
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
-                float cellLastVisitTime = mapManager.GetHeat(myCell.x + x, myCell.y + z);
+                float cellLastVisitTime = mapManager.GetHeat(myCellX + x, myCellZ + z);
                 float timeSinceVisit = Time.time - cellLastVisitTime;
+
+                // Chuẩn hóa: Càng lâu chưa đến = giá trị càng gần 1 (ngon). Mới đến = 0 (dở)
                 float normalizedHeat = Mathf.Clamp01(timeSinceVisit / 10f);
                 sensor.AddObservation(normalizedHeat);
             }
         }
 
-        // [15-18] Cảm nhận Player gần nhất (4)
-        // Drone biết hướng, khoảng cách, và có thấy không
-        GameObject nearestPlayer = mapManager.GetNearestActivePlayer(transform.position);
-        if (nearestPlayer != null) {
-            Vector3 toPlayer = nearestPlayer.transform.position - transform.position;
-            float distance = toPlayer.magnitude;
-            float normalizedDist = Mathf.Clamp01(distance / 40f); // Phạm vi cảm nhận tối đa 40m
+        // Bổ sung 6 quan sát ngữ cảnh mục tiêu để khớp vector size = 18.
+        // 1) Hướng local đến mục tiêu gần nhất (3)
+        // 2) Khoảng cách chuẩn hóa (1)
+        // 3) Độ thẳng hướng nhìn tới mục tiêu (1)
+        // 4) Tỉ lệ tốc độ ngang hiện tại (1)
+        Transform target = mapManager.GetNearestTargetForObservations(transform.position);
+        Vector3 toTargetWorld = Vector3.zero;
+        float normalizedDistance = 0f;
+        float facingDot = 0f;
 
-            // Kiểm tra line-of-sight bằng Raycast
-            bool canSee = !Physics.Raycast(
-                transform.position + Vector3.up * 0.5f,
-                toPlayer.normalized,
-                distance,
-                LayerMask.GetMask("Wall", "Obstacle")
-            );
+        if (target != null) {
+            toTargetWorld = target.position - transform.position;
+            toTargetWorld.y = 0f;
 
-            // Hướng đến player trong hệ tọa độ local (trái/phải, trước/sau)
-            Vector3 localDir = transform.InverseTransformDirection(toPlayer.normalized);
-            sensor.AddObservation(localDir.x);           // Hướng ngang
-            sensor.AddObservation(localDir.z);           // Hướng dọc
-            sensor.AddObservation(normalizedDist);       // Khoảng cách (0 = gần, 1 = xa)
-            sensor.AddObservation(canSee ? 1f : 0f);    // Có nhìn thấy không
-        } else {
-            // Không có Player active -> giá trị mặc định trung lập
-            sensor.AddObservation(0f);
-            sensor.AddObservation(0f);
-            sensor.AddObservation(1f); // Coi như xa vô cực
-            sensor.AddObservation(0f);
+            float distance = toTargetWorld.magnitude;
+            normalizedDistance = Mathf.Clamp01(distance / Mathf.Max(1f, mapManager.mapSize));
+
+            if (distance > 0.001f) {
+                Vector3 targetDir = toTargetWorld / distance;
+                facingDot = Vector3.Dot(transform.forward, targetDir);
+            }
         }
+
+        Vector3 localTargetDir = transform.InverseTransformDirection(toTargetWorld);
+        if (localTargetDir.sqrMagnitude > 0.0001f) {
+            localTargetDir.Normalize();
+        }
+
+        float horizontalSpeedRatio = Mathf.Clamp01(
+            new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).magnitude / Mathf.Max(0.01f, moveSpeed)
+        );
+
+        sensor.AddObservation(localTargetDir);
+        sensor.AddObservation(normalizedDistance);
+        sensor.AddObservation(facingDot);
+        sensor.AddObservation(horizontalSpeedRatio);
     }
 
     public override void OnActionReceived(ActionBuffers actions) {
         if (mapManager == null || rb == null) return;
 
-        // Clamp giá trị để đảm bảo an toàn
-        float moveForward = Mathf.Clamp(actions.ContinuousActions[0], -1f, 1f);
-        float turnDirection = Mathf.Clamp(actions.ContinuousActions[1], -1f, 1f);
+        float moveForward = actions.ContinuousActions[0];
+        float turnDirection = actions.ContinuousActions[1];
 
-        // 1. Xoay Drone
-        transform.Rotate(Vector3.up, turnDirection * turnSpeed * Time.fixedDeltaTime);
-
-        // 2. Di chuyển bằng Force (Giúp AI học vật lý tốt hơn và dội tường tự nhiên)
-        Vector3 force = transform.forward * moveForward * moveSpeed;
-        rb.AddForce(force, ForceMode.Acceleration);
-
-        // Giới hạn tốc độ không cho bay nhanh vô hạn
-        Vector3 flatVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-        if (flatVelocity.magnitude > maxSpeed) {
-            Vector3 limitedVel = flatVelocity.normalized * maxSpeed;
-            rb.linearVelocity = new Vector3(limitedVel.x, rb.linearVelocity.y, limitedVel.z);
+        if (!allowBackward) {
+            // Chuyển dải [-1, 1] thành [0, 1] để bot ưu tiên tiến về trước.
+            moveForward = Mathf.Clamp01((moveForward + 1f) * 0.5f);
+            if (moveForward > 0f && moveForward < minimumForwardInput) {
+                moveForward = minimumForwardInput;
+            }
+        }
+        else {
+            if (Mathf.Abs(moveForward) > 0f && Mathf.Abs(moveForward) < minimumForwardInput) {
+                moveForward = Mathf.Sign(moveForward) * minimumForwardInput;
+            }
         }
 
-        // 3. Đã khóa Position Y ở trên nên không cần AddForce chống trọng lực nữa
+        Vector3 moveDir = transform.forward * moveForward * moveSpeed;
+        rb.linearVelocity = new Vector3(moveDir.x, rb.linearVelocity.y, moveDir.z); // Giữ nguyên Y để rớt vật lý tự nhiên
+        transform.Rotate(Vector3.up, turnDirection * turnSpeed * Time.fixedDeltaTime);
 
-        // 4. Nhận thưởng từ Heatmap (khám phá ô mới)
+        // NHỜ MANAGER CHECK HEATMAP
         mapManager.ProcessHeatmapReward(this);
 
-        // 5. Phạt thời gian tồn tại (Khuyến khích tìm Player nhanh)
         if (MaxStep > 0) {
             AddReward(-1f / MaxStep);
         }
 
-        // 6. Thưởng nhỏ khi nhìn thấy Player (không bị tường che) -> kéo drone đến gần mục tiêu
-        GameObject nearestPlayer = mapManager.GetNearestActivePlayer(transform.position);
-        if (nearestPlayer != null) {
-            Vector3 toPlayer = nearestPlayer.transform.position - transform.position;
-            float dist = toPlayer.magnitude;
-            bool canSee = !Physics.Raycast(
-                transform.position + Vector3.up * 0.5f,
-                toPlayer.normalized,
-                dist,
-                LayerMask.GetMask("Wall", "Obstacle")
-            );
-            if (canSee && dist < 20f) {
-                // Thưởng tỷ lệ nghịch với khoảng cách: gần Player = thưởng nhiều hơn
-                AddReward((1f - dist / 20f) * 0.001f);
-            }
+        if (new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).magnitude < idleSpeedThreshold) {
+            AddReward(idleSpeedPenalty);
         }
     }
 
     private void OnTriggerEnter(Collider other) {
         if (other.CompareTag("Player")) {
+            // BÁO CÁO MANAGER ĐÃ BẮT ĐƯỢC
             mapManager.OnPlayerCaught(other.gameObject, this);
         }
     }
 
-    // Xử lý đâm tường tối ưu
-    private void OnCollisionEnter(Collision collision) {
-        if (collision.gameObject.CompareTag("Wall") || collision.gameObject.CompareTag("Obstacle")) {
-            AddReward(-0.02f); // Phạt một lần đủ đau để AI chừa
-        }
-    }
-
+    // XỬ LÝ ĐÂM TƯỜNG (PHẠT NHẸ, KHÔNG END EPISODE ĐỂ KHÔNG HỎNG MULTI-AGENT)
     private void OnCollisionStay(Collision collision) {
         if (collision.gameObject.CompareTag("Wall") || collision.gameObject.CompareTag("Obstacle")) {
-            AddReward(-0.0005f); // Phạt cực nhẹ để AI không thích cọ xát vào tường
+            AddReward(-0.01f); // Trừ điểm liên tục nếu cứ cạ vào tường
         }
     }
 }

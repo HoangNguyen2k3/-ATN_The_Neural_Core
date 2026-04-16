@@ -3,59 +3,68 @@ using UnityEngine.AI;
 
 /// <summary>
 /// AI Companion chạy cùng Human Player.
-/// Mặc định đi về Exit Zone. Khi Drone đến gần → chạy trốn ngược hướng.
-/// Tag: "Player" (Drone vẫn nhận ra và có thể bắt được).
+/// Có 2 chế độ: Đi dạo lung tung (isPatrol = true) hoặc đi thẳng về Exit (isPatrol = false).
+/// Khi Drone đến gần → luôn ưu tiên chạy trốn ngược hướng.
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
 public class AICompanion : MonoBehaviour {
     // ─── Settings ────────────────────────────────────────────────
-    [Header("Navigation")]
+    [Header("Behavior Mode")]
+    [Tooltip("Bật True để AI đi dạo ngẫu nhiên (Rất tốt khi Train AI). Bật False để AI đi tìm lối thoát.")]
+    public bool isPatrol = false;
+
+    [Header("Navigation - Exit Mode")]
     [Tooltip("Transform của Exit Zone — gán trong Inspector")]
     public Transform exitTarget;
 
+    [Header("Navigation - Patrol Mode")]
+    [Tooltip("Bán kính đi dạo ngẫu nhiên quanh vị trí hiện tại")]
+    public float patrolRadius = 15f;
+    [Tooltip("Thời gian đứng chờ trước khi đi đến điểm mới")]
+    public float patrolWaitTime = 2f;
+
+    [Header("Fleeing (Chạy trốn)")]
     [Tooltip("Bán kính phát hiện Drone (m). Khi Drone vào vùng này → bắt đầu chạy trốn")]
     public float fleeDetectionRadius = 25f;
-
     [Tooltip("Khoảng cách chạy trốn mỗi lần cập nhật")]
     public float fleeDistance = 12f;
 
     [Header("Speed")]
-    [Tooltip("Tốc độ đi bình thường về Exit (m/s)")]
     public float normalSpeed = 4f;
-
-    [Tooltip("Tốc độ chạy trốn khi Drone gần (m/s)")]
     public float fleeSpeed = 7f;
 
-    [Header("Debug")]
+    [Header("Animation & Debug")]
+    public Animator animator;
     public bool showDebugGizmos = true;
 
     // ─── Private ─────────────────────────────────────────────────
     private NavMeshAgent _agent;
     private Transform _nearestDrone;
     private float _fleeUpdateTimer;
-    private const float FleeUpdateInterval = 0.4f; // Cập nhật hướng chạy 2.5 lần/giây
+    private float _patrolTimer;
+    private const float FleeUpdateInterval = 0.4f;
 
-    enum State { Navigate, Flee }
+    enum State { Navigate, Patrol, Flee }
     private State _state = State.Navigate;
 
     // ════════════════════════════════════════════════════════════════
     void Awake() {
         _agent = GetComponent<NavMeshAgent>();
-        gameObject.tag = "Player"; // Drone nhận diện được!
+        gameObject.tag = "Player"; // Drone nhận diện được
     }
 
     void Start() {
-        // Tự tìm Exit nếu chưa gán
         if (exitTarget == null) {
             var exit = Object.FindFirstObjectByType<ExitZone>();
             if (exit != null) exitTarget = exit.transform;
         }
+        _patrolTimer = patrolWaitTime; // Khởi tạo timer đi dạo
     }
 
     void Update() {
-        // Dừng khi game kết thúc
         if (IslandGameManager.Instance != null && !IslandGameManager.Instance.IsPlaying) {
             _agent.ResetPath();
+            UpdateAnimation(0f);
             return;
         }
 
@@ -63,27 +72,41 @@ public class AICompanion : MonoBehaviour {
 
         UpdateDroneDetection();
         UpdateBehavior();
+        UpdateAnimation(_agent.velocity.magnitude);
+    }
+
+    void UpdateAnimation(float speed) {
+        if (animator != null) {
+            animator.SetFloat("Speed", speed);
+        }
     }
 
     // ════════════════════════════════════════════════════════════════
     #region State Machine
 
     void UpdateDroneDetection() {
-        // Tìm drone gần nhất (cập nhật liên tục nhưng rẻ vì SearchCache)
         _nearestDrone = FindNearestDroneTransform();
 
+        // Ưu tiên 1: Chạy trốn nếu Drone ở gần
         if (_nearestDrone != null) {
             float dist = Vector3.Distance(transform.position, _nearestDrone.position);
-            _state = dist < fleeDetectionRadius ? State.Flee : State.Navigate;
-        } else {
-            _state = State.Navigate;
+            if (dist < fleeDetectionRadius) {
+                _state = State.Flee;
+                return;
+            }
         }
+
+        // Ưu tiên 2: Làm theo Mode đã chọn
+        _state = isPatrol ? State.Patrol : State.Navigate;
     }
 
     void UpdateBehavior() {
         switch (_state) {
             case State.Navigate:
                 DoNavigate();
+                break;
+            case State.Patrol:
+                DoPatrol();
                 break;
             case State.Flee:
                 DoFlee();
@@ -98,13 +121,34 @@ public class AICompanion : MonoBehaviour {
         }
     }
 
+    void DoPatrol() {
+        _agent.speed = normalSpeed;
+
+        // Nếu đã đến đích (hoặc gần đến) -> bắt đầu đếm ngược thời gian chờ
+        if (!_agent.hasPath || _agent.remainingDistance < 0.5f) {
+            _patrolTimer -= Time.deltaTime;
+
+            // Hết thời gian chờ -> Tìm điểm mới ngẫu nhiên trên NavMesh
+            if (_patrolTimer <= 0f) {
+                Vector3 randomDir = Random.insideUnitSphere * patrolRadius;
+                randomDir += transform.position;
+
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(randomDir, out hit, patrolRadius, NavMesh.AllAreas)) {
+                    _agent.SetDestination(hit.position);
+                }
+
+                _patrolTimer = patrolWaitTime; // Reset timer
+            }
+        }
+    }
+
     void DoFlee() {
         if (_nearestDrone == null) return;
 
         _agent.speed = fleeSpeed;
-
-        // Cập nhật đích chạy trốn theo interval (không cần mỗi frame)
         _fleeUpdateTimer -= Time.deltaTime;
+
         if (_fleeUpdateTimer <= 0f) {
             _fleeUpdateTimer = FleeUpdateInterval;
 
@@ -112,7 +156,6 @@ public class AICompanion : MonoBehaviour {
             fleeDir.y = 0f;
             fleeDir.Normalize();
 
-            // Thêm chút lệch ngẫu nhiên để không chạy thẳng quá dễ đoán
             Vector3 randomOffset = new Vector3(Random.Range(-0.4f, 0.4f), 0f, Random.Range(-0.4f, 0.4f));
             fleeDir = (fleeDir + randomOffset).normalized;
 
@@ -122,10 +165,9 @@ public class AICompanion : MonoBehaviour {
     #endregion
 
     // ════════════════════════════════════════════════════════════════
-    #region Helpers
+    #region Helpers & Gizmos
 
     Transform FindNearestDroneTransform() {
-        // FindObjectsByType có cache tốt hơn FindObjectsOfType legacy
         var drones = Object.FindObjectsByType<AdvancedSeekerDrone>(FindObjectsSortMode.None);
         Transform nearest = null;
         float nearestSqDist = float.MaxValue;
@@ -138,25 +180,18 @@ public class AICompanion : MonoBehaviour {
                 nearest = drone.transform;
             }
         }
-
         return nearest;
     }
-    #endregion
-
-    // ════════════════════════════════════════════════════════════════
-    #region Debug Gizmos
 
     void OnDrawGizmosSelected() {
         if (!showDebugGizmos) return;
 
-        // Vùng phát hiện Drone
         Gizmos.color = _state == State.Flee
             ? new Color(1f, 0.2f, 0.2f, 0.2f)
             : new Color(0.2f, 1f, 0.2f, 0.15f);
         Gizmos.DrawWireSphere(transform.position, fleeDetectionRadius);
 
-        // Đường đến Exit
-        if (exitTarget != null) {
+        if (_state == State.Navigate && exitTarget != null) {
             Gizmos.color = Color.cyan;
             Gizmos.DrawLine(transform.position, exitTarget.position);
         }

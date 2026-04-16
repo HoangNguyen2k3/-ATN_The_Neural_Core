@@ -23,6 +23,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Game/_Scene/_Island1/FlyIsland.unity
     guid: 6587a6c32204f3141ba10c93d66d5bec
+  - enabled: 1
+    path: Assets/_Game/_Scene/_Island2/MainMenuIsland2.unity
+    guid: 6659a67722af2e34f82aeea8b97bebcf
+  - enabled: 1
+    path: Assets/_Game/_Scene/_Island2/Island2Scene.unity
+    guid: 0d5cdfd71dff45f49bec3767fc982db4
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

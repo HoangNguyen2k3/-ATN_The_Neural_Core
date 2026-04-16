@@ -61,6 +61,6 @@ namespace Aircraft {
 public enum CurrentIsland {
     StartScene,
     MainMenuFlyIsland,
-    Island2,
+    MainMenuIsland2,
     Island3,
 }

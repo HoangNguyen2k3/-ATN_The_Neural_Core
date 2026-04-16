@@ -4,144 +4,259 @@ using UnityEngine.AI;
 
 public class MapManager : MonoBehaviour {
     [Header("Mode")]
+    [Tooltip("Bật True khi chơi thật. False khi Train AI.")]
     public bool isGameplayMode = false;
 
-    [Header("Bản đồ & Heatmap")]
-    public float mapSize = 30f;
-    public int gridResolution = 15;
+    [Header("Cấu hình Bản đồ Hình chữ nhật")]
+    [Tooltip("X: Chiều Rộng (Width), Y: Chiều Dài (Length/Trục Z trong 3D)")]
+    public Vector2 mapSize = new Vector2(200f, 100f);
+
+    [Tooltip("Số ô chia theo chiều rộng X")]
+    public int gridResolutionX = 40;
+    [Tooltip("Số ô chia theo chiều dài Z")]
+    public int gridResolutionZ = 20;
+
     private float[,] heatmap;
-    private float cellSize;
+    private float cellWidth;
+    private float cellLength;
 
     [Header("Quản lý Object")]
     public List<AdvancedSeekerDrone> drones;
     public List<GameObject> players;
-    public List<Transform> obstacles; // Kéo các bức tường/vật cản vào đây để random
+    public List<Transform> obstacles;
 
     [Header("Episode Settings")]
-    public float stageTimeLimit = 45f;
+    [Tooltip("Thời gian tối đa mỗi episode (giây)")]
+    public float stageTimeLimit = 120f;
     public float timeoutPenalty = -1f;
 
-    [Header("Drone Bounds")]
-    public float outOfBoundsMargin = 1f;
-    public float outOfBoundsPenalty = -0.5f;
-    public float minAllowedLocalY = -2f;
-    public float maxAllowedLocalY = 8f;
-    public float droneSpawnPadding = 2f;
-    public float droneSpawnLocalY = 1f;
+    [Header("Bounds Settings (Bảo vệ an toàn)")]
+    public float minAllowedLocalY = -2f;  // Chống rớt xuyên sàn
+    public float maxAllowedLocalY = 20f;  // Chống bay lọt qua trần nhà
+    public float droneSpawnPadding = 5f;  // Cách tường ít nhất 5m lúc spawn
+    public float droneSpawnLocalY = 1.5f; // Độ cao thả Drone lúc đầu
 
-    [Header("Anti-Stuck")]
-    public float stuckSpeedThreshold = 0.25f;
-    public float stuckDurationToReset = 2f;
-    public float stuckPenalty = -0.25f;
+    [Header("Stuck Detection (Chống kẹt)")]
+    [Tooltip("Tốc độ ngang tối thiểu để không bị tính là kẹt (m/s)")]
+    public float stuckSpeedThreshold = 0.05f;
+    [Tooltip("Bao nhiêu giây đứng im thì bị tính là kẹt")]
+    public float stuckTimeLimit = 10f;
+    [Tooltip("Số giây miễn dịch sau khi spawn - tránh phạt oan lúc AI chưa kịp tăng tốc")]
+    public float stuckGracePeriod = 8f;
+
+    [HideInInspector] public bool isResetting = false;
 
     private int playersFoundThisStage = 0;
-    private bool isResetting = false;
     private float stageStartTime = 0f;
-    private readonly Dictionary<AdvancedSeekerDrone, float> stuckTimerByDrone = new();
+
+    // Cache Rigidbody + timer
+    private Rigidbody[] droneRigidbodies;
+    private float[] droneStuckTimers;
+    private float[] droneEpisodeStartTimes;
 
     void Awake() {
-        cellSize = mapSize / gridResolution;
-        heatmap = new float[gridResolution, gridResolution];
+        cellWidth = mapSize.x / gridResolutionX;
+        cellLength = mapSize.y / gridResolutionZ;
+        heatmap = new float[gridResolutionX, gridResolutionZ];
     }
 
     void Start() {
+        droneRigidbodies = new Rigidbody[drones.Count];
+        droneStuckTimers = new float[drones.Count];
+        droneEpisodeStartTimes = new float[drones.Count];
+
+        for (int i = 0; i < drones.Count; i++) {
+            if (drones[i] != null)
+                droneRigidbodies[i] = drones[i].GetComponent<Rigidbody>();
+            droneEpisodeStartTimes[i] = Time.time;
+        }
+
         if (!isGameplayMode) {
             ResetMap();
         }
     }
 
     void Update() {
-        if (isResetting) return;
-        if (drones == null || drones.Count == 0) return;
+        if (isResetting || isGameplayMode) return;
 
-        // Gameplay mode: không chạy logic reset/respawn của training.
-        if (isGameplayMode) {
+        // 1. Kiểm tra hết thời gian (Timeout)
+        if (Time.time - stageStartTime >= stageTimeLimit) {
+            EndStageAndReset(false);
             return;
         }
 
-        if (Time.time - stageStartTime >= stageTimeLimit) {
-            EndStageAndReset(false);
-        }
-
-        foreach (var drone in drones) {
+        for (int i = 0; i < drones.Count; i++) {
+            var drone = drones[i];
             if (drone == null) continue;
 
-            if (IsDroneOutOfBounds(drone.transform.position)) {
-                HandleDroneOutOfBounds(drone);
+            // 2. Kiểm tra lỗi rớt trục Y (Văng ra khỏi map)
+            float localY = transform.InverseTransformPoint(drone.transform.position).y;
+            if (localY < minAllowedLocalY || localY > maxAllowedLocalY) {
+                drone.AddReward(timeoutPenalty);
+                drone.EndEpisode(); // Tự reset nó thông qua OnEpisodeBegin
                 continue;
             }
 
-            HandleDroneStuckCheck(drone);
+            // 3. Cảm biến kẹt (Stuck Detection)
+            if (droneRigidbodies != null && i < droneRigidbodies.Length && droneRigidbodies[i] != null) {
+                float timeSinceEpisodeStart = Time.time - droneEpisodeStartTimes[i];
+
+                if (timeSinceEpisodeStart < stuckGracePeriod) continue; // Đang trong thời gian miễn nhiễm
+
+                Rigidbody rb = droneRigidbodies[i];
+                float flatSpeed = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).magnitude;
+
+                if (flatSpeed < stuckSpeedThreshold) {
+                    droneStuckTimers[i] += Time.deltaTime;
+                    if (droneStuckTimers[i] >= stuckTimeLimit) {
+                        drone.AddReward(-0.3f);
+                        droneStuckTimers[i] = 0f;
+                        drone.EndEpisode();
+                    }
+                }
+                else {
+                    droneStuckTimers[i] = 0f;
+                }
+            }
         }
     }
 
-    public Vector2Int WorldToGrid(Vector3 worldPosition) {
-        Vector3 local = transform.InverseTransformPoint(worldPosition);
+    // ════════════════════════════════════════════════════════════════
+    #region Quản lý Map & Episode
 
-        int cellX = Mathf.FloorToInt((local.x + (mapSize / 2f)) / cellSize);
-        int cellZ = Mathf.FloorToInt((local.z + (mapSize / 2f)) / cellSize);
-
-        cellX = Mathf.Clamp(cellX, 0, gridResolution - 1);
-        cellZ = Mathf.Clamp(cellZ, 0, gridResolution - 1);
-
-        return new Vector2Int(cellX, cellZ);
-    }
-
-    // Hàm này được gọi khi bắt đầu Stage mới, hoặc khi Drone bị Timeout
     public void ResetMap() {
         if (isGameplayMode) return;
-        if (isResetting) return;
-        isResetting = true;
+        if (!isResetting) isResetting = true;
 
         playersFoundThisStage = 0;
         stageStartTime = Time.time;
 
-        // 1. Reset Heatmap
-        for (int i = 0; i < gridResolution; i++) {
-            for (int j = 0; j < gridResolution; j++) {
-                heatmap[i, j] = Time.time;
+        // 1. Làm nguội toàn bộ Heatmap (Để AI có động lực chạy ngay lúc đầu)
+        for (int i = 0; i < gridResolutionX; i++) {
+            for (int j = 0; j < gridResolutionZ; j++) {
+                heatmap[i, j] = Time.time - 5f;
             }
         }
 
-        // 2. Randomize Vật cản (Obstacles) - Thay đổi cấu trúc map
-        foreach (var obs in obstacles) {
-            obs.localPosition = new Vector3(Random.Range(-10f, 10f), 0.5f, Random.Range(-10f, 10f));
-            // Lưu ý: Nếu thay đổi vật cản, bạn có thể cần dùng NavMeshSurface để Bake lại runtime, 
-            // hoặc thiết kế các vật cản dùng NavMeshObstacle có Carve = true để không phải bake lại.
-        }
+        // 2. Không reset vật cản (Để AI học ổn định)
 
-        // 3. Spawn Players an toàn trên NavMesh
+        // 3. Hồi sinh và random vị trí Player trên NavMesh
         foreach (var p in players) {
+            if (p == null) continue;
             p.SetActive(true);
             Vector3 safePos = GetRandomNavMeshPosition();
-            p.GetComponent<NavMeshAgent>().Warp(safePos); // Bắt buộc dùng Warp thay vì transform.position
+            var agent = p.GetComponent<NavMeshAgent>();
+            if (agent != null) agent.Warp(safePos);
         }
 
-        // 4. Báo cho các Drone reset vị trí (Sửa lỗi lơ lửng, tính theo Y cục bộ của MapManager)
+        // 4. Reset vị trí Drone
         foreach (var d in drones) {
-            if (d == null) continue;
-            stuckTimerByDrone[d] = 0f;
-            ResetSingleDronePosition(d);
+            if (d != null) {
+                ResetSingleDronePosition(d);
+            }
         }
 
         isResetting = false;
     }
 
-    // Drone gọi hàm này để check Heatmap và nhận thưởng
-    public void ProcessHeatmapReward(AdvancedSeekerDrone drone) {
-        Vector2Int cell = WorldToGrid(drone.transform.position);
-        int cellX = cell.x;
-        int cellZ = cell.y;
+    private void EndStageAndReset(bool success) {
+        if (isResetting) return;
+        isResetting = true;
 
-        float timeSinceLastVisit = Time.time - heatmap[cellX, cellZ];
+        foreach (var d in drones) {
+            if (d == null) continue;
 
-        if (timeSinceLastVisit > 3f) {
-            drone.AddReward(timeSinceLastVisit * 0.01f);
-            heatmap[cellX, cellZ] = Time.time; // Cập nhật lại độ nóng cho TOÀN BỘ team
+            if (success) {
+                d.AddReward(2f); // Thắng thì cả team cộng điểm
+            }
+            else {
+                d.AddReward(timeoutPenalty); // Thua thì cả team bị trừ
+            }
+            d.EndEpisode();
+        }
+
+        ResetMap();
+    }
+
+    public void ResetSingleDronePosition(AdvancedSeekerDrone drone) {
+        float halfX = Mathf.Max(1f, (mapSize.x / 2f) - droneSpawnPadding);
+        float halfZ = Mathf.Max(1f, (mapSize.y / 2f) - droneSpawnPadding);
+
+        Vector3 localXZ = new Vector3(Random.Range(-halfX, halfX), 0f, Random.Range(-halfZ, halfZ));
+        Vector3 worldXZ = transform.TransformPoint(localXZ);
+        Vector3 finalSpawn = new Vector3(worldXZ.x, transform.position.y + droneSpawnLocalY, worldXZ.z);
+
+        Rigidbody droneRb = drone.GetComponent<Rigidbody>();
+        if (droneRb != null) {
+            droneRb.linearVelocity = Vector3.zero;
+            droneRb.angularVelocity = Vector3.zero;
+            droneRb.position = finalSpawn;
+        }
+        else {
+            drone.transform.position = finalSpawn;
+        }
+
+        // Reset bộ đếm chống kẹt
+        int idx = drones.IndexOf(drone);
+        if (idx >= 0 && droneStuckTimers != null && idx < droneStuckTimers.Length) {
+            droneStuckTimers[idx] = 0f;
+            droneEpisodeStartTimes[idx] = Time.time;
         }
     }
 
-    // Drone gọi hàm này khi bắt được Player
+    private Vector3 GetRandomNavMeshPosition() {
+        for (int attempt = 0; attempt < 15; attempt++) {
+            Vector3 randomLocal = new Vector3(
+                Random.Range(-mapSize.x / 2f, mapSize.x / 2f),
+                0f,
+                Random.Range(-mapSize.y / 2f, mapSize.y / 2f)
+            );
+
+            Vector3 randomWorld = transform.TransformPoint(randomLocal);
+
+            if (NavMesh.SamplePosition(randomWorld, out NavMeshHit hit, 15f, NavMesh.AllAreas)) {
+                return hit.position;
+            }
+        }
+
+        Debug.LogWarning("[MapManager] NavMesh sampling thất bại sau 15 lần, thả tạm ở tâm map.", this);
+        return transform.position;
+    }
+    #endregion
+
+    // ════════════════════════════════════════════════════════════════
+    #region Tương tác với Drone (Observations & Rewards)
+
+    public Vector2Int WorldToGrid(Vector3 worldPosition) {
+        Vector3 local = transform.InverseTransformPoint(worldPosition);
+
+        int cellX = Mathf.FloorToInt((local.x + (mapSize.x / 2f)) / cellWidth);
+        int cellZ = Mathf.FloorToInt((local.z + (mapSize.y / 2f)) / cellLength);
+
+        cellX = Mathf.Clamp(cellX, 0, gridResolutionX - 1);
+        cellZ = Mathf.Clamp(cellZ, 0, gridResolutionZ - 1);
+
+        return new Vector2Int(cellX, cellZ);
+    }
+
+    public float GetHeat(int x, int z) {
+        if (x < 0 || x >= gridResolutionX || z < 0 || z >= gridResolutionZ) {
+            return Time.time;
+        }
+        return heatmap[x, z];
+    }
+
+    public void ProcessHeatmapReward(AdvancedSeekerDrone drone) {
+        Vector2Int cell = WorldToGrid(drone.transform.position);
+        float timeSinceLastVisit = Time.time - heatmap[cell.x, cell.y];
+
+        if (timeSinceLastVisit > 3f) {
+            float explorationReward = Mathf.Min(timeSinceLastVisit * 0.01f, 0.15f);
+            drone.AddReward(explorationReward);
+            heatmap[cell.x, cell.y] = Time.time;
+        }
+    }
+
     public void OnPlayerCaught(GameObject caughtPlayer, AdvancedSeekerDrone catcherDrone) {
         if (isGameplayMode) {
             if (caughtPlayer == null || !caughtPlayer.activeSelf) return;
@@ -157,162 +272,77 @@ public class MapManager : MonoBehaviour {
                 caughtPlayer.SetActive(false);
                 IslandGameManager.Instance?.OnCompanionCaught(caughtPlayer);
             }
-
             return;
         }
 
-        if (!caughtPlayer.activeSelf) return; // Tránh việc 2 drone cùng báo bắt 1 lúc
+        // --- Logic khi đang Train AI ---
+        if (!caughtPlayer.activeSelf) return;
 
         caughtPlayer.SetActive(false);
-        catcherDrone.AddReward(5f); // Thưởng đậm cho cá nhân bắt được
-
+        catcherDrone.AddReward(5f);
         playersFoundThisStage++;
 
-        // NẾU TÌM THẤY HẾT PLAYER -> CHUYỂN STAGE / RESET
         if (playersFoundThisStage >= players.Count) {
             EndStageAndReset(true);
         }
     }
 
-    public Transform GetNearestGameplayTarget(Vector3 fromPosition) {
-        GameObject[] playerObjects = GameObject.FindGameObjectsWithTag("Player");
-        Transform nearest = null;
-        float nearestSqDist = float.MaxValue;
+    public GameObject GetNearestActivePlayer(Vector3 fromPosition) {
+        GameObject nearest = null;
+        float nearestDistSq = float.MaxValue;
 
-        foreach (GameObject playerObject in playerObjects) {
-            if (playerObject == null || !playerObject.activeInHierarchy) continue;
-
-            float sqDist = (playerObject.transform.position - fromPosition).sqrMagnitude;
-            if (sqDist < nearestSqDist) {
-                nearestSqDist = sqDist;
-                nearest = playerObject.transform;
+        foreach (var p in players) {
+            if (p == null || !p.activeSelf) continue;
+            float distSq = (fromPosition - p.transform.position).sqrMagnitude;
+            if (distSq < nearestDistSq) {
+                nearestDistSq = distSq;
+                nearest = p;
             }
         }
-
         return nearest;
     }
+    #endregion
 
-    public Transform GetNearestTargetForObservations(Vector3 fromPosition) {
-        Transform nearest = null;
-        float nearestSqDist = float.MaxValue;
+    // ════════════════════════════════════════════════════════════════
+    #region Debug Gizmos
+    private void OnDrawGizmos() {
+        Matrix4x4 oldMatrix = Gizmos.matrix;
+        Gizmos.matrix = transform.localToWorldMatrix;
 
-        if (players != null && players.Count > 0) {
-            foreach (GameObject playerObject in players) {
-                if (playerObject == null || !playerObject.activeInHierarchy) continue;
+        float yCenter = (maxAllowedLocalY + minAllowedLocalY) / 2f;
+        float ySize = maxAllowedLocalY - minAllowedLocalY;
+        Vector3 centerOffset = new Vector3(0f, yCenter, 0f);
 
-                float sqDist = (playerObject.transform.position - fromPosition).sqrMagnitude;
-                if (sqDist < nearestSqDist) {
-                    nearestSqDist = sqDist;
-                    nearest = playerObject.transform;
-                }
+        // 1. Map Size
+        Gizmos.color = new Color(0f, 1f, 0f, 0.8f);
+        Vector3 mapBoxSize = new Vector3(mapSize.x, ySize, mapSize.y);
+        Gizmos.DrawWireCube(centerOffset, mapBoxSize);
+
+        // 2. Vùng Spawn Drone
+        Gizmos.color = new Color(0f, 1f, 1f, 0.6f);
+        float spawnBoxSizeX = Mathf.Max(1f, mapSize.x - droneSpawnPadding * 2f);
+        float spawnBoxSizeZ = Mathf.Max(1f, mapSize.y - droneSpawnPadding * 2f);
+        Vector3 spawnCenter = new Vector3(0f, droneSpawnLocalY, 0f);
+        Vector3 spawnSize = new Vector3(spawnBoxSizeX, 0.1f, spawnBoxSizeZ);
+        Gizmos.DrawWireCube(spawnCenter, spawnSize);
+
+        // 3. Lưới Heatmap (Chỉ hiện khi đang chạy game để đỡ rối)
+        if (Application.isPlaying && cellWidth > 0 && cellLength > 0) {
+            Gizmos.color = new Color(1f, 1f, 1f, 0.15f);
+            float startX = -mapSize.x / 2f;
+            float startZ = -mapSize.y / 2f;
+
+            for (int x = 0; x <= gridResolutionX; x++) {
+                float xPos = startX + x * cellWidth;
+                Gizmos.DrawLine(new Vector3(xPos, 0, startZ), new Vector3(xPos, 0, startZ + mapSize.y));
+            }
+            for (int z = 0; z <= gridResolutionZ; z++) {
+                float zPos = startZ + z * cellLength;
+                Gizmos.DrawLine(new Vector3(startX, 0, zPos), new Vector3(startX + mapSize.x, 0, zPos));
             }
         }
 
-        if (nearest != null) return nearest;
-
-        // Fallback cho gameplay scene khi danh sách players chưa được gán.
-        return GetNearestGameplayTarget(fromPosition);
+        Gizmos.matrix = oldMatrix;
     }
-
-    private void EndStageAndReset(bool success) {
-        if (isResetting) return;
-
-        foreach (var d in drones) {
-            if (d == null) continue;
-
-            if (success) {
-                d.AddReward(2f);
-            }
-            else {
-                d.AddReward(timeoutPenalty);
-            }
-
-            d.EndEpisode();
-        }
-
-        ResetMap();
-    }
-
-    private bool IsDroneOutOfBounds(Vector3 worldPosition) {
-        Vector3 local = transform.InverseTransformPoint(worldPosition);
-        float half = (mapSize / 2f) + outOfBoundsMargin;
-
-        bool outsideHorizontal = Mathf.Abs(local.x) > half || Mathf.Abs(local.z) > half;
-        bool outsideVertical = local.y < minAllowedLocalY || local.y > maxAllowedLocalY;
-
-        return outsideHorizontal || outsideVertical;
-    }
-
-    private void HandleDroneOutOfBounds(AdvancedSeekerDrone drone) {
-        drone.AddReward(outOfBoundsPenalty);
-        ResetSingleDronePosition(drone);
-        stuckTimerByDrone[drone] = 0f;
-    }
-
-    private void HandleDroneStuckCheck(AdvancedSeekerDrone drone) {
-        Rigidbody droneRb = drone.GetComponent<Rigidbody>();
-        if (droneRb == null) return;
-
-        float horizontalSpeed = new Vector2(droneRb.linearVelocity.x, droneRb.linearVelocity.z).magnitude;
-
-        if (!stuckTimerByDrone.ContainsKey(drone)) {
-            stuckTimerByDrone[drone] = 0f;
-        }
-
-        if (horizontalSpeed < stuckSpeedThreshold) {
-            stuckTimerByDrone[drone] += Time.deltaTime;
-
-            if (stuckTimerByDrone[drone] >= stuckDurationToReset) {
-                drone.AddReward(stuckPenalty);
-                ResetSingleDronePosition(drone);
-                stuckTimerByDrone[drone] = 0f;
-            }
-        }
-        else {
-            stuckTimerByDrone[drone] = 0f;
-        }
-    }
-
-    private void ResetSingleDronePosition(AdvancedSeekerDrone drone) {
-        drone.transform.position = GetRandomDroneSpawnPosition();
-        drone.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
-
-        Rigidbody droneRb = drone.GetComponent<Rigidbody>();
-        if (droneRb != null) {
-            droneRb.linearVelocity = Vector3.zero;
-            droneRb.angularVelocity = Vector3.zero;
-        }
-    }
-
-    private Vector3 GetRandomDroneSpawnPosition() {
-        float half = Mathf.Max(1f, (mapSize / 2f) - droneSpawnPadding);
-        Vector3 localSpawn = new Vector3(
-            Random.Range(-half, half),
-            droneSpawnLocalY,
-            Random.Range(-half, half)
-        );
-
-        return transform.TransformPoint(localSpawn);
-    }
-
-    // Tiện ích: Tìm điểm hợp lệ trên NavMesh để không bị spawn chìm vào tường
-    private Vector3 GetRandomNavMeshPosition() {
-        Vector3 randomDirection = Random.insideUnitSphere * (mapSize / 2f);
-        randomDirection += transform.position; // FIXED: Tính theo vị trí của Scene/Map hiện tại
-        randomDirection.y = transform.position.y;
-        NavMeshHit hit;
-        // Tăng bán kính quét lên mapSize / 2f để luôn luôn tìm được đất NavMesh
-        if (NavMesh.SamplePosition(randomDirection, out hit, mapSize / 2f, NavMesh.AllAreas)) {
-            return hit.position;
-        }
-        return transform.position; // Fallback an toàn về tâm Map
-    }
-
-    // Tiện ích: Drone gọi hàm này để "Ngửi" ô lưới Heatmap (Hỗ trợ 3x3)
-    public float GetHeat(int x, int z) {
-        if (x < 0 || x >= gridResolution || z < 0 || z >= gridResolution) {
-            return Time.time; // Ra ngoài map coi như đất cực Nóng (cấm đi)
-        }
-        return heatmap[x, z];
-    }
+    #endregion
 }

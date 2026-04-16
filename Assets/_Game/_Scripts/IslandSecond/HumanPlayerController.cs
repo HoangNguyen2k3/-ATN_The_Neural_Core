@@ -1,110 +1,102 @@
 using UnityEngine;
-using UnityEngine.AI;
 
 /// <summary>
 /// Controller cho Human Player trong Island 2 Gameplay.
-/// Di chuyển bằng WASD theo hướng camera, sprint bằng Shift.
-/// Sử dụng NavMeshAgent để tôn trọng địa hình và obstacle.
-/// Tag phải là "HumanPlayer" để Drone và ExitZone nhận biết đúng.
+/// Điều khiển bằng CharacterController, xoay theo Camera và có Animator.
 /// </summary>
-[RequireComponent(typeof(NavMeshAgent))]
+[RequireComponent(typeof(CharacterController))]
 public class HumanPlayerController : MonoBehaviour {
-    [Header("Movement Settings")]
-    [Tooltip("Tốc độ đi bộ bình thường (m/s)")]
+    [Header("Cài đặt chung")]
+    public CharacterController controller;
+    public Transform cam; // Kéo Main Camera vào đây
+    public Animator animator;
+
+    [Header("Thông số di chuyển")]
     public float walkSpeed = 5f;
+    public float sprintSpeed = 10f; // Chạy nhanh khi giữ Shift
+    public float turnSmoothTime = 0.1f;
+    private float turnSmoothVelocity;
 
-    [Tooltip("Tốc độ chạy nhanh khi giữ Shift (m/s)")]
-    public float sprintSpeed = 10f;
+    [Header("Nhảy & Trọng lực")]
+    public float gravity = -19.62f;
+    public float jumpHeight = 1.5f;
+    private Vector3 velocity;
+    private bool isGrounded;
 
-    [Tooltip("Tốc độ xoay mặt nhân vật")]
-    public float rotationSpeed = 15f;
+    [Header("Check mặt đất")]
+    public Transform groundCheck;
+    public float groundDistance = 0.4f;
+    public LayerMask groundMask;
 
-    [Header("Camera Reference")]
-    [Tooltip("Transform của Camera (để tính hướng di chuyển theo camera). Tự tìm Camera.main nếu bỏ trống.")]
-    public Transform cameraTransform;
-
-    // ─── Private ─────────────────────────────────────────────────
-    private NavMeshAgent _agent;
-    private bool _isSprinting;
-    private Vector3 _moveDir;
-
-    // ════════════════════════════════════════════════════════════════
     void Awake() {
-        _agent = GetComponent<NavMeshAgent>();
+        if (controller == null) controller = GetComponent<CharacterController>();
         gameObject.tag = "Player"; // Dùng chung tag Player để AI Sensor nhìn thấy
     }
 
     void Start() {
-        // Tự tìm camera nếu chưa gán
-        if (cameraTransform == null && Camera.main != null) {
-            cameraTransform = Camera.main.transform;
+        if (cam == null && Camera.main != null) {
+            cam = Camera.main.transform;
         }
-
-        // Để NavMeshAgent tự xử lý vị trí, tắt update physics tay
-        _agent.updatePosition = true;
-        _agent.updateRotation = false; // Mình tự xoay để mượt hơn
-        _agent.stoppingDistance = 0.1f;
     }
 
     void Update() {
-        // Dừng khi game không còn chơi
+        // Dừng điều khiển khi game kết thúc
         if (IslandGameManager.Instance != null && !IslandGameManager.Instance.IsPlaying) {
-            _agent.ResetPath();
+            if (animator != null) {
+                animator.SetBool("IsMoving", false);
+            }
             return;
         }
 
-        if (!_agent.isOnNavMesh) return;
-
-        HandleMovement();
-        HandleRotation();
+        HandleMovementAndAnimation();
     }
 
-    // ════════════════════════════════════════════════════════════════
-    #region Movement
+    void HandleMovementAndAnimation() {
+        // 1. KIỂM TRA CHẠM ĐẤT
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
-    void HandleMovement() {
-        float h = Input.GetAxisRaw("Horizontal"); // A/D
-        float v = Input.GetAxisRaw("Vertical");   // W/S
-        _isSprinting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-
-        if (Mathf.Abs(h) < 0.01f && Mathf.Abs(v) < 0.01f) {
-            // Không nhấn phím → dừng mượt mà
-            _agent.ResetPath();
-            _agent.velocity = Vector3.Lerp(_agent.velocity, Vector3.zero, Time.deltaTime * 10f);
-            _moveDir = Vector3.zero;
-            return;
+        if (isGrounded && velocity.y < 0) {
+            velocity.y = -2f; // Giữ nhân vật bám đất
         }
 
-        // Tính hướng di chuyển dựa theo camera hiện tại
-        Vector3 camForward = cameraTransform != null ? cameraTransform.forward : Vector3.forward;
-        Vector3 camRight   = cameraTransform != null ? cameraTransform.right   : Vector3.right;
+        if (animator != null) animator.SetBool("IsGrounded", isGrounded);
 
-        // Chiếu xuống mặt phẳng XZ (bỏ trục Y)
-        camForward.y = 0f;
-        camRight.y   = 0f;
-        camForward.Normalize();
-        camRight.Normalize();
+        // 2. LẤY INPUT
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
+        Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
 
-        _moveDir = (camForward * v + camRight * h).normalized;
+        bool isSprinting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        float currentSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
-        // Tốc độ theo sprint
-        float speed = _isSprinting ? sprintSpeed : walkSpeed;
-        _agent.speed = speed;
+        // 3. DI CHUYỂN & XOAY THEO CAMERA
+        if (direction.magnitude >= 0.1f) {
+            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
+            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+            transform.rotation = Quaternion.Euler(0f, angle, 0f);
 
-        // Điểm đích xa 4m theo hướng di chuyển → NavMesh pathfind ngắn
-        Vector3 destination = transform.position + _moveDir * 4f;
-        _agent.SetDestination(destination);
-    }
+            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+            controller.Move(moveDir.normalized * currentSpeed * Time.deltaTime);
 
-    void HandleRotation() {
-        // Xoay nhân vật mượt mà theo hướng đang di chuyển
-        if (_moveDir.sqrMagnitude > 0.01f) {
-            Quaternion targetRot = Quaternion.LookRotation(_moveDir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
+            if (animator != null) {
+                animator.SetBool("IsMoving", true);
+                // Truyền vận tốc di chuyển vào Animator để chuyển đổi anim Đi/Chạy
+            }
         }
-    }
-    #endregion
+        else {
+            if (animator != null) {
+                animator.SetBool("IsMoving", false);
+            }
+        }
 
-    // ════════════════════════════════════════════════════════════════
-    // OnTriggerEnter KHÔNG cần ở đây — Drone xử lý trong AdvancedSeekerDrone.cs
+        // 4. NHẢY
+        if (Input.GetButtonDown("Jump") && isGrounded) {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            if (animator != null) animator.SetTrigger("Jump");
+        }
+
+        // 5. TRỌNG LỰC
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
+    }
 }

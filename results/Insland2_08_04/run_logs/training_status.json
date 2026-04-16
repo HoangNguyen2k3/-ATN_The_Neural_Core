@@ -1,0 +1,29 @@
+{
+    "SeekerDrone": {
+        "checkpoints": [
+            {
+                "steps": 139264,
+                "file_path": "results\\Insland2_08_04\\SeekerDrone\\SeekerDrone-139264.onnx",
+                "reward": -0.9352949263760627,
+                "creation_time": 1775607811.8593595,
+                "auxillary_file_paths": [
+                    "results\\Insland2_08_04\\SeekerDrone\\SeekerDrone-139264.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 139264,
+            "file_path": "results\\Insland2_08_04\\SeekerDrone.onnx",
+            "reward": -0.9352949263760627,
+            "creation_time": 1775607811.8593595,
+            "auxillary_file_paths": [
+                "results\\Insland2_08_04\\SeekerDrone\\SeekerDrone-139264.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

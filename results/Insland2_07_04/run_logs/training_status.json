@@ -1,0 +1,65 @@
+{
+    "SeekerDrone": {
+        "checkpoints": [
+            {
+                "steps": 4499999,
+                "file_path": "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-4499999.onnx",
+                "reward": -0.9105078194100978,
+                "creation_time": 1775594264.139355,
+                "auxillary_file_paths": [
+                    "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-4499999.pt"
+                ]
+            },
+            {
+                "steps": 4999999,
+                "file_path": "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-4999999.onnx",
+                "reward": -0.9033714138532125,
+                "creation_time": 1775595281.924492,
+                "auxillary_file_paths": [
+                    "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-4999999.pt"
+                ]
+            },
+            {
+                "steps": 5499999,
+                "file_path": "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-5499999.onnx",
+                "reward": -0.9069815983944327,
+                "creation_time": 1775596310.5119545,
+                "auxillary_file_paths": [
+                    "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-5499999.pt"
+                ]
+            },
+            {
+                "steps": 5999999,
+                "file_path": "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-5999999.onnx",
+                "reward": -0.9044263561042444,
+                "creation_time": 1775597336.20106,
+                "auxillary_file_paths": [
+                    "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-5999999.pt"
+                ]
+            },
+            {
+                "steps": 6000014,
+                "file_path": "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-6000014.onnx",
+                "reward": -0.9053145628422499,
+                "creation_time": 1775597336.2658832,
+                "auxillary_file_paths": [
+                    "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-6000014.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 6000014,
+            "file_path": "results\\Insland2_07_04\\SeekerDrone.onnx",
+            "reward": -0.9053145628422499,
+            "creation_time": 1775597336.2658832,
+            "auxillary_file_paths": [
+                "results\\Insland2_07_04\\SeekerDrone\\SeekerDrone-6000014.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

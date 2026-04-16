@@ -1,8 +1,8 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using TMPro;
 
 /// <summary>
 /// Singleton quản lý toàn bộ game state cho Island 2 Gameplay Scene.
@@ -120,7 +120,8 @@ public class IslandGameManager : MonoBehaviour {
 
         Debug.Log("[IslandGameManager] Human Player bị bắt — Game Over");
         Time.timeScale = 0f;
-
+        // Ẩn con trỏ chuột
+        Cursor.lockState = CursorLockMode.None;
         hudPanel?.SetActive(false);
         losePanel?.SetActive(true);
     }
@@ -139,7 +140,7 @@ public class IslandGameManager : MonoBehaviour {
 
         Debug.Log("[IslandGameManager] Thoát thành công — Chiến thắng!");
         Time.timeScale = 0f;
-
+        Cursor.lockState = CursorLockMode.None;
         hudPanel?.SetActive(false);
         winPanel?.SetActive(true);
     }

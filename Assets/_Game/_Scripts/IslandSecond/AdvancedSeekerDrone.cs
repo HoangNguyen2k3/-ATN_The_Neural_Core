@@ -31,7 +31,7 @@ public class AdvancedSeekerDrone : Agent {
         rb = GetComponent<Rigidbody>();
 
         if (mapManager == null) {
-            mapManager = Object.FindFirstObjectByType<MapManager>();
+            mapManager = FindFirstObjectByType<MapManager>();
         }
 
         MaxStep = 0;
@@ -42,7 +42,7 @@ public class AdvancedSeekerDrone : Agent {
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         // Khóa xoay X/Z để không bị lật, KHÔNG khóa Y position trong constraints
         // vì ta sẽ khóa Y thủ công trong FixedUpdate (chính xác hơn)
-        rb.constraints = RigidbodyConstraints.FreezeRotationX 
+        rb.constraints = RigidbodyConstraints.FreezeRotationX
                        | RigidbodyConstraints.FreezeRotationZ;
         // Giảm Drag để AddForce không bị triệt tiêu
         rb.linearDamping = 0.5f;
@@ -187,10 +187,10 @@ public class AdvancedSeekerDrone : Agent {
         // Tại sao? Ghi đè Velocity làm AI đâm vào chướng ngại vật vẫn tưởng mình đang đi với 15m/s
         Vector3 targetVelocity = transform.forward * currentMoveInput * moveSpeed;
         Vector3 currentFlatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-        
+
         // Tính lực cần thiết để đạt tới targetVelocity 
         Vector3 velocityChange = targetVelocity - currentFlatVel;
-        
+
         // Đẩy 1 lực gia tốc Acceleration gấp 10 lần để nó vọt đi nhanh nhưng vẫn bị cản bởi tường
         rb.AddForce(velocityChange * 10f, ForceMode.Acceleration);
 

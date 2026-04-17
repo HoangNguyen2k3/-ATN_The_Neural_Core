@@ -52,6 +52,7 @@ public class MapManager : MonoBehaviour {
     // Cache Rigidbody + timer
     private Rigidbody[] droneRigidbodies;
     private float[] droneStuckTimers;
+    private Vector3[] droneStuckStartPositions;
     private float[] droneEpisodeStartTimes;
 
     void Awake() {
@@ -63,6 +64,7 @@ public class MapManager : MonoBehaviour {
     void Start() {
         droneRigidbodies = new Rigidbody[drones.Count];
         droneStuckTimers = new float[drones.Count];
+        droneStuckStartPositions = new Vector3[drones.Count];
         droneEpisodeStartTimes = new float[drones.Count];
 
         for (int i = 0; i < drones.Count; i++) {
@@ -97,25 +99,29 @@ public class MapManager : MonoBehaviour {
                 continue;
             }
 
-            // 3. Cảm biến kẹt (Stuck Detection)
+            // 3. Cảm biến kẹt bằng khoảng cách (Stuck Detection - Positional)
             if (droneRigidbodies != null && i < droneRigidbodies.Length && droneRigidbodies[i] != null) {
                 float timeSinceEpisodeStart = Time.time - droneEpisodeStartTimes[i];
 
-                if (timeSinceEpisodeStart < stuckGracePeriod) continue; // Đang trong thời gian miễn nhiễm
-
-                Rigidbody rb = droneRigidbodies[i];
-                float flatSpeed = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).magnitude;
-
-                if (flatSpeed < stuckSpeedThreshold) {
-                    droneStuckTimers[i] += Time.deltaTime;
-                    if (droneStuckTimers[i] >= stuckTimeLimit) {
-                        drone.AddReward(-0.3f);
-                        droneStuckTimers[i] = 0f;
-                        drone.EndEpisode();
-                    }
-                }
-                else {
+                if (timeSinceEpisodeStart < stuckGracePeriod) {
+                    droneStuckStartPositions[i] = drone.transform.position;
                     droneStuckTimers[i] = 0f;
+                    continue; // Đang trong thời gian miễn nhiễm
+                }
+
+                droneStuckTimers[i] += Time.deltaTime;
+
+                if (droneStuckTimers[i] >= stuckTimeLimit) { // Mỗi chu kỳ 10 giây
+                    float distanceMoved = Vector3.Distance(drone.transform.position, droneStuckStartPositions[i]);
+                    
+                    if (distanceMoved < 3f) { // Nếu di chuyển chưa được 3 mét trong 10 giây => KẸT
+                        drone.AddReward(-0.3f);
+                        drone.EndEpisode();
+                    } else {
+                        // Nếu đi được xa hơn 3 mét, reset lại mốc để đo 10 giây tiếp theo
+                        droneStuckStartPositions[i] = drone.transform.position;
+                        droneStuckTimers[i] = 0f;
+                    }
                 }
             }
         }

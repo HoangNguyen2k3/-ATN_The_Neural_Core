@@ -6,7 +6,9 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class AdvancedSeekerDrone : Agent {
     [Header("Cài đặt Di chuyển")]
-    public float moveSpeed = 12f;
+    [Tooltip("Tốc độ di chuyển tối đa (m/s)")]
+    public float moveSpeed = 15f;
+    [Tooltip("Tốc độ xoay (độ/giây)")]
     public float turnSpeed = 250f;
     public bool allowBackward = false;
 
@@ -16,6 +18,14 @@ public class AdvancedSeekerDrone : Agent {
 
     private Rigidbody rb;
     private float lastWallHitTime = 0f;
+    private float spawnY; // Khóa cứng độ cao bay
+
+    // Lưu lệnh từ não AI (OnActionReceived) để FixedUpdate dùng liên tục
+    private float currentMoveInput = 0f;
+    private float currentTurnInput = 0f;
+
+    // ════════════════════════════════════════════════════════════════
+    #region ML-Agents Lifecycle
 
     public override void Initialize() {
         rb = GetComponent<Rigidbody>();
@@ -25,16 +35,40 @@ public class AdvancedSeekerDrone : Agent {
         }
 
         MaxStep = 0;
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
+        // === CẤU HÌNH RIGIDBODY CHUẨN CHO DRONE BAY ===
+        rb.useGravity = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        // Khóa xoay X/Z để không bị lật, KHÔNG khóa Y position trong constraints
+        // vì ta sẽ khóa Y thủ công trong FixedUpdate (chính xác hơn)
+        rb.constraints = RigidbodyConstraints.FreezeRotationX 
+                       | RigidbodyConstraints.FreezeRotationZ;
+        // Giảm Drag để AddForce không bị triệt tiêu
+        rb.linearDamping = 0.5f;
+        rb.angularDamping = 0.5f;
+
+        // === TẮT ROOT MOTION — tránh Animator giật Rigidbody ===
+        if (animator != null) {
+            animator.applyRootMotion = false;
+        }
+
+        // Ghi nhớ độ cao spawn ban đầu
+        spawnY = transform.position.y;
     }
 
     public override void OnEpisodeBegin() {
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
+        currentMoveInput = 0f;
+        currentTurnInput = 0f;
 
         if (mapManager != null && !mapManager.isResetting) {
             mapManager.ResetSingleDronePosition(this);
         }
+
+        // Cập nhật lại độ cao khóa sau khi spawn
+        spawnY = transform.position.y;
     }
 
     public override void Heuristic(in ActionBuffers actionsOut) {
@@ -42,14 +76,18 @@ public class AdvancedSeekerDrone : Agent {
         continuousActionsOut[0] = Input.GetAxis("Vertical");
         continuousActionsOut[1] = Input.GetAxis("Horizontal");
     }
+    #endregion
+
+    // ════════════════════════════════════════════════════════════════
+    #region Observations (18 giá trị)
 
     public override void CollectObservations(VectorSensor sensor) {
         if (mapManager == null) return;
 
-        // 1. Vận tốc cục bộ (3)
+        // 1. Vận tốc cục bộ (3 giá trị)
         sensor.AddObservation(transform.InverseTransformDirection(rb.linearVelocity));
 
-        // 2. Heatmap lưới 3x3 (9)
+        // 2. Heatmap lưới 3x3 (9 giá trị)
         Vector2Int myCell = mapManager.WorldToGrid(transform.position);
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
@@ -59,7 +97,7 @@ public class AdvancedSeekerDrone : Agent {
             }
         }
 
-        // 3. Quan sát mục tiêu (6)
+        // 3. Quan sát mục tiêu (6 giá trị)
         GameObject targetObj = mapManager.GetNearestActivePlayer(transform.position);
 
         Vector3 toTargetWorld = Vector3.zero;
@@ -71,7 +109,6 @@ public class AdvancedSeekerDrone : Agent {
             toTargetWorld.y = 0f;
 
             float distance = toTargetWorld.magnitude;
-
             float maxMapDimension = Mathf.Max(mapManager.mapSize.x, mapManager.mapSize.y);
             normalizedDistance = Mathf.Clamp01(distance / Mathf.Max(1f, maxMapDimension));
 
@@ -89,34 +126,31 @@ public class AdvancedSeekerDrone : Agent {
             new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).magnitude / Mathf.Max(0.01f, moveSpeed)
         );
 
-        sensor.AddObservation(localTargetDir);
-        sensor.AddObservation(normalizedDistance);
-        sensor.AddObservation(facingDot);
-        sensor.AddObservation(horizontalSpeedRatio);
+        sensor.AddObservation(localTargetDir);        // 3 giá trị
+        sensor.AddObservation(normalizedDistance);     // 1 giá trị
+        sensor.AddObservation(facingDot);              // 1 giá trị
+        sensor.AddObservation(horizontalSpeedRatio);   // 1 giá trị
     }
+    #endregion
+
+    // ════════════════════════════════════════════════════════════════
+    #region Actions & Physics
 
     public override void OnActionReceived(ActionBuffers actions) {
         if (mapManager == null || rb == null) return;
 
-        float moveInput = actions.ContinuousActions[0];
-        float turnInput = actions.ContinuousActions[1];
+        // Lưu lệnh từ não AI — FixedUpdate sẽ thực thi liên tục
+        currentMoveInput = actions.ContinuousActions[0];
+        currentTurnInput = actions.ContinuousActions[1];
 
         if (!allowBackward) {
-            moveInput = (moveInput + 1f) * 0.5f;
+            currentMoveInput = (currentMoveInput + 1f) * 0.5f; // Map [-1,1] → [0,1]
         }
 
-        Vector3 moveDir = transform.forward * moveInput * moveSpeed;
-        rb.linearVelocity = new Vector3(moveDir.x, rb.linearVelocity.y, moveDir.z);
-        transform.Rotate(Vector3.up, turnInput * turnSpeed * Time.fixedDeltaTime);
-
-        if (animator != null) {
-            float horizontalSpeed = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).magnitude;
-            animator.SetFloat("Speed", horizontalSpeed);
-        }
-
+        // Xử lý phần thưởng (chỉ gọi mỗi Decision, không cần mỗi FixedUpdate)
         mapManager.ProcessHeatmapReward(this);
 
-        // --- REWARD SHAPING: RẢI BÁNH MÌ VỤN ---
+        // --- REWARD SHAPING ---
         GameObject targetObj = mapManager.GetNearestActivePlayer(transform.position);
         if (targetObj != null) {
             Vector3 toTarget = targetObj.transform.position - transform.position;
@@ -126,24 +160,58 @@ public class AdvancedSeekerDrone : Agent {
                 Vector3 dirToTarget = toTarget.normalized;
                 float lookDot = Vector3.Dot(transform.forward, dirToTarget);
 
-                // 1. Thưởng nhẹ nếu quay mặt về hướng mục tiêu (Góc nhìn < 45 độ)
+                // Thưởng nhẹ nếu quay mặt về hướng mục tiêu
                 if (lookDot > 0.7f) {
-                    AddReward(0.0005f);
+                    AddReward(0.001f);
                 }
 
-                // 2. Thưởng đậm hơn chút nếu đang thực sự di chuyển về hướng đó
-                Vector3 currentVelocityXZ = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-                if (currentVelocityXZ.magnitude > 1f) {
-                    float moveDot = Vector3.Dot(currentVelocityXZ.normalized, dirToTarget);
-                    // Nếu hướng di chuyển gần như song song với hướng tới mục tiêu
+                // Thưởng đậm hơn nếu đang thực sự di chuyển về hướng đó
+                Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+                if (flatVel.magnitude > 1f) {
+                    float moveDot = Vector3.Dot(flatVel.normalized, dirToTarget);
                     if (moveDot > 0.8f) {
-                        AddReward(0.001f);
+                        AddReward(0.002f);
                     }
                 }
             }
         }
-        // ---------------------------------------
     }
+
+    private void FixedUpdate() {
+        if (rb == null) return;
+
+        // ═══ XOAY — liên tục mỗi physics frame ═══
+        transform.Rotate(Vector3.up, currentTurnInput * turnSpeed * Time.fixedDeltaTime);
+
+        // ═══ DI CHUYỂN — Sử dụng Lực kéo (AddForce) thay vì ghi đè Velocity ═══
+        // Tại sao? Ghi đè Velocity làm AI đâm vào chướng ngại vật vẫn tưởng mình đang đi với 15m/s
+        Vector3 targetVelocity = transform.forward * currentMoveInput * moveSpeed;
+        Vector3 currentFlatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+        
+        // Tính lực cần thiết để đạt tới targetVelocity 
+        Vector3 velocityChange = targetVelocity - currentFlatVel;
+        
+        // Đẩy 1 lực gia tốc Acceleration gấp 10 lần để nó vọt đi nhanh nhưng vẫn bị cản bởi tường
+        rb.AddForce(velocityChange * 10f, ForceMode.Acceleration);
+
+        // ═══ KHÓA ĐỘ CAO Y — chống trôi lên/xuống ═══
+        Vector3 pos = rb.position;
+        pos.y = spawnY;
+        rb.position = pos;
+        if (Mathf.Abs(rb.linearVelocity.y) > 0.01f) {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+        }
+
+        // ═══ ANIMATOR ═══
+        if (animator != null) {
+            float flatSpeed = currentFlatVel.magnitude;
+            animator.SetFloat("Speed", flatSpeed);
+        }
+    }
+    #endregion
+
+    // ════════════════════════════════════════════════════════════════
+    #region Collision & Trigger
 
     private void OnTriggerEnter(Collider other) {
         if (other.CompareTag("Player")) {
@@ -153,10 +221,21 @@ public class AdvancedSeekerDrone : Agent {
 
     private void OnCollisionEnter(Collision collision) {
         if (collision.gameObject.CompareTag("Wall") || collision.gameObject.CompareTag("Obstacle")) {
-            if (Time.time - lastWallHitTime > 0.5f) {
-                AddReward(-0.02f);
+            if (Time.time - lastWallHitTime > 1.0f) {
+                AddReward(-0.01f);
                 lastWallHitTime = Time.time;
             }
         }
     }
+
+    private void OnCollisionStay(Collision collision) {
+        if (collision.gameObject.CompareTag("Wall") || collision.gameObject.CompareTag("Obstacle")) {
+            // Phạt liên tục nếu cố tình cọ xát/mài mặt vào tường (1 giây phạt 1 lần)
+            if (Time.time - lastWallHitTime > 1.0f) {
+                AddReward(-0.01f);
+                lastWallHitTime = Time.time;
+            }
+        }
+    }
+    #endregion
 }

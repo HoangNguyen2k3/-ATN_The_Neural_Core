@@ -147,7 +147,7 @@ namespace Aircraft {
                 }
                 else {
                     var model = difficultyModels
-                        .Find(x => x.difficulty == GameManager.Instance.GameDifficulty).model;
+                        .Find(x => x.difficulty == GameManager.Instance.GameDifficultyIsland1).model;
 
                     agent.SetModel("AI", model);
                 }

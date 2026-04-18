@@ -15,6 +15,7 @@ public class AdvancedSeekerDrone : Agent {
     [Header("Tham chiếu")]
     public MapManager mapManager;
     public Animator animator;
+    public GameObject coneObject;
 
     private Rigidbody rb;
     private float lastWallHitTime = 0f;
@@ -62,6 +63,13 @@ public class AdvancedSeekerDrone : Agent {
         rb.angularVelocity = Vector3.zero;
         currentMoveInput = 0f;
         currentTurnInput = 0f;
+
+        // Khi đang trong Intro cutscene: KHÔNG reset vị trí drone
+        // (để drone giữ nguyên vị trí trong scene mà đạo diễn đã xếp)
+        if (IslandGameManager.Instance != null && !IslandGameManager.Instance.IsPlaying) {
+            spawnY = transform.position.y;
+            return;
+        }
 
         if (mapManager != null && !mapManager.isResetting) {
             mapManager.ResetSingleDronePosition(this);
@@ -139,6 +147,13 @@ public class AdvancedSeekerDrone : Agent {
     public override void OnActionReceived(ActionBuffers actions) {
         if (mapManager == null || rb == null) return;
 
+        // ═══ ĐÓNG BĂNG KHI ĐANG CUTSCENE INTRO ═══
+        if (IslandGameManager.Instance != null && !IslandGameManager.Instance.IsPlaying) {
+            currentMoveInput = 0f;
+            currentTurnInput = 0f;
+            return;
+        }
+
         // Lưu lệnh từ não AI — FixedUpdate sẽ thực thi liên tục
         currentMoveInput = actions.ContinuousActions[0];
         currentTurnInput = actions.ContinuousActions[1];
@@ -180,6 +195,13 @@ public class AdvancedSeekerDrone : Agent {
     private void FixedUpdate() {
         if (rb == null) return;
 
+        // ═══ ĐÓNG BĂNG KHI ĐANG CUTSCENE INTRO ═══
+        if (IslandGameManager.Instance != null && !IslandGameManager.Instance.IsPlaying) {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            return;
+        }
+
         // ═══ XOAY — liên tục mỗi physics frame ═══
         transform.Rotate(Vector3.up, currentTurnInput * turnSpeed * Time.fixedDeltaTime);
 
@@ -204,9 +226,17 @@ public class AdvancedSeekerDrone : Agent {
 
         // ═══ ANIMATOR ═══
         if (animator != null) {
-            float flatSpeed = currentFlatVel.magnitude;
-            animator.SetFloat("Speed", flatSpeed);
+            if (HasParameter(animator, "Speed")) {
+                float flatSpeed = currentFlatVel.magnitude;
+                animator.SetFloat("Speed", flatSpeed);
+            }
         }
+    }
+    private bool HasParameter(Animator anim, string paramName) {
+        foreach (AnimatorControllerParameter param in anim.parameters) {
+            if (param.name == paramName) return true;
+        }
+        return false;
     }
     #endregion
 
@@ -238,4 +268,8 @@ public class AdvancedSeekerDrone : Agent {
         }
     }
     #endregion
+    public void ActiveAll() {
+        if (coneObject != null && coneObject.activeSelf == false)
+            coneObject.SetActive(true);
+    }
 }

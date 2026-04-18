@@ -23,8 +23,11 @@ namespace Aircraft {
         public UI_Loading ui_fakeLoading;
 
         [Header("=============Data Change Scene==============")]
-        public GameDifficulty GameDifficulty { get; set; }
+        //Island 1
+        public GameDifficulty GameDifficultyIsland1 { get; set; }
         public int numberLevel = 0;
+        //Island 2
+        public GameDifficulty GameDifficultyIsland2 { get; set; }
         [Header("=============Data Game======================")]
         public GameDataConfig gameDataConfig;
         private void Awake() {

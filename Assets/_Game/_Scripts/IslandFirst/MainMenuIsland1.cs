@@ -40,7 +40,7 @@ namespace Aircraft {
             Debug.Log(selectedDifficulty + "SET");
         }
         public void StartButtonClicked() {
-            GameManager.Instance.GameDifficulty = selectedDifficulty;
+            GameManager.Instance.GameDifficultyIsland1 = selectedDifficulty;
             GameManager.Instance.LoadLevel(selectedLevel);
         }
         public void QuitButtonClicked() {

@@ -3,15 +3,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static Aircraft.RaceManager;
 
-/// <summary>
-/// Singleton quản lý toàn bộ game state cho Island 2 Gameplay Scene.
-/// Xử lý Countdown, Win/Lose, companion tracking.
-/// </summary>
 public class IslandGameManager : MonoBehaviour {
     public static IslandGameManager Instance { get; private set; }
 
-    public enum GameState { Playing, Won, Lost }
+    public enum GameState { Intro, Playing, Won, Lost }
 
     // ─── Settings ───────────────────────────────────────────────────
     [Header("Settings")]
@@ -46,14 +43,15 @@ public class IslandGameManager : MonoBehaviour {
     public Button loseMenuButton;
 
     // ─── Runtime ────────────────────────────────────────────────────
-    private GameState _state = GameState.Playing;
+    private GameState _state = GameState.Intro;
     private float _countdown;
     private List<Image> _companionIcons = new List<Image>();
     private int _totalCompanions;
     private int _companionsCaught;
 
+    public GameObject cinemachineCam;
     public bool IsPlaying => _state == GameState.Playing;
-
+    public List<DifficultyModel> difficultyModels;
     // ════════════════════════════════════════════════════════════════
     #region Unity Lifecycle
     void Awake() {
@@ -63,11 +61,12 @@ public class IslandGameManager : MonoBehaviour {
             return;
         }
         Instance = this;
+        var forceInitAcademy = Unity.MLAgents.Academy.Instance;
     }
 
     void Start() {
         _countdown = countdownDuration;
-        _state = GameState.Playing;
+        _state = GameState.Intro; // Bắt đầu ở trạng thái Intro (chờ cutscene xong)
         _companionsCaught = 0;
 
         // Bật gameplay mode cho MapManager
@@ -88,8 +87,8 @@ public class IslandGameManager : MonoBehaviour {
         loseRetryButton?.onClick.AddListener(RestartLevel);
         loseMenuButton?.onClick.AddListener(GoToMainMenu);
 
-        // Hiện HUD, ẩn Win/Lose
-        hudPanel?.SetActive(true);
+        // Ẩn tất cả panel lúc đầu (HUD sẽ hiện khi Intro kết thúc)
+        hudPanel?.SetActive(false);
         winPanel?.SetActive(false);
         losePanel?.SetActive(false);
 
@@ -143,6 +142,19 @@ public class IslandGameManager : MonoBehaviour {
         Cursor.lockState = CursorLockMode.None;
         hudPanel?.SetActive(false);
         winPanel?.SetActive(true);
+    }
+    /// <summary>
+    /// Được gọi bởi IntroCutsceneManager khi cutscene kết thúc.
+    /// Chuyển sang trạng thái Playing, bật HUD và bắt đầu đếm ngược.
+    /// </summary>
+    public void OnIntroFinished() {
+        if (_state != GameState.Intro) return;
+        _state = GameState.Playing;
+        hudPanel?.SetActive(true);
+        _countdown = countdownDuration;
+        cinemachineCam.SetActive(false);
+        Cursor.lockState = CursorLockMode.Locked;
+        Debug.Log("[IslandGameManager] Intro kết thúc — Game bắt đầu!");
     }
     #endregion
 

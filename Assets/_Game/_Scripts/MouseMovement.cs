@@ -21,8 +21,8 @@ public class MouseMovement : MonoBehaviour {
     private float currentY = 0f;
 
     void Start() {
-        // Ẩn con trỏ chuột
-        Cursor.lockState = CursorLockMode.Locked;
+        /*        // Ẩn con trỏ chuột
+                Cursor.lockState = CursorLockMode.Locked;*/
     }
 
     void LateUpdate() { // Dùng LateUpdate cho Camera để tránh bị giật lag (jitter)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Lean.Pool;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -54,6 +55,9 @@ public class MapManager : MonoBehaviour {
     private float[] droneStuckTimers;
     private Vector3[] droneStuckStartPositions;
     private float[] droneEpisodeStartTimes;
+
+    [Header("================Particle==============")]
+    public ParticleSystem particleCatchNPC;
 
     void Awake() {
         cellWidth = mapSize.x / gridResolutionX;
@@ -113,11 +117,12 @@ public class MapManager : MonoBehaviour {
 
                 if (droneStuckTimers[i] >= stuckTimeLimit) { // Mỗi chu kỳ 10 giây
                     float distanceMoved = Vector3.Distance(drone.transform.position, droneStuckStartPositions[i]);
-                    
+
                     if (distanceMoved < 3f) { // Nếu di chuyển chưa được 3 mét trong 10 giây => KẸT
                         drone.AddReward(-0.3f);
                         drone.EndEpisode();
-                    } else {
+                    }
+                    else {
                         // Nếu đi được xa hơn 3 mét, reset lại mốc để đo 10 giây tiếp theo
                         droneStuckStartPositions[i] = drone.transform.position;
                         droneStuckTimers[i] = 0f;
@@ -275,6 +280,8 @@ public class MapManager : MonoBehaviour {
 
             AICompanion companion = caughtPlayer.GetComponent<AICompanion>();
             if (companion != null) {
+                Vector3 pos = companion.transform.position + new Vector3(0, 3, 0);
+                LeanPool.Spawn(particleCatchNPC, pos, Quaternion.identity);
                 caughtPlayer.SetActive(false);
                 IslandGameManager.Instance?.OnCompanionCaught(caughtPlayer);
             }

@@ -1,0 +1,29 @@
+{
+    "SeekerDrone": {
+        "checkpoints": [
+            {
+                "steps": 8006,
+                "file_path": "results\\Insland2_FullFix_Test\\SeekerDrone\\SeekerDrone-8006.onnx",
+                "reward": 1.0417127271111195,
+                "creation_time": 1776414234.0624006,
+                "auxillary_file_paths": [
+                    "results\\Insland2_FullFix_Test\\SeekerDrone\\SeekerDrone-8006.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 8006,
+            "file_path": "results\\Insland2_FullFix_Test\\SeekerDrone.onnx",
+            "reward": 1.0417127271111195,
+            "creation_time": 1776414234.0624006,
+            "auxillary_file_paths": [
+                "results\\Insland2_FullFix_Test\\SeekerDrone\\SeekerDrone-8006.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

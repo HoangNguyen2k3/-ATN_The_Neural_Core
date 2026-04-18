@@ -3511,7 +3511,7 @@ PrefabInstance:
       objectReference: {fileID: 5022602860645237092, guid: 75cf9080ea374fe4993e9b698ec9d722, type: 3}
     - target: {fileID: 5472023453060719744, guid: f62dcafb589b4a2419718a42874243ca, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5755256638610752390, guid: f62dcafb589b4a2419718a42874243ca, type: 3}
       propertyPath: m_LocalPosition.x
@@ -5414,7 +5414,7 @@ PrefabInstance:
       objectReference: {fileID: 5022602860645237092, guid: 75cf9080ea374fe4993e9b698ec9d722, type: 3}
     - target: {fileID: 5472023453060719744, guid: f62dcafb589b4a2419718a42874243ca, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5755256638610752390, guid: f62dcafb589b4a2419718a42874243ca, type: 3}
       propertyPath: m_LocalPosition.x
@@ -7362,7 +7362,15 @@ MonoBehaviour:
   loseRetryButton: {fileID: 0}
   loseMenuButton: {fileID: 0}
   cinemachineCam: {fileID: 1088249310}
-  difficultyModels: []
+  difficultyModels:
+  - difficulty: 0
+    model: {fileID: 5022602860645237092, guid: e875b96de21d1c044b3d6466ef6e0b96, type: 3}
+  - difficulty: 1
+    model: {fileID: 5022602860645237092, guid: 1a8e3122cdeb3e346be9d29250045803, type: 3}
+  - difficulty: 2
+    model: {fileID: 5022602860645237092, guid: 9b337e9e120937d49aa842583ed985cb, type: 3}
+  - difficulty: 3
+    model: {fileID: 5022602860645237092, guid: 75cf9080ea374fe4993e9b698ec9d722, type: 3}
 --- !u!4 &756641099
 Transform:
   m_ObjectHideFlags: 0
@@ -10615,7 +10623,7 @@ PrefabInstance:
       objectReference: {fileID: 5022602860645237092, guid: 75cf9080ea374fe4993e9b698ec9d722, type: 3}
     - target: {fileID: 5472023453060719744, guid: f62dcafb589b4a2419718a42874243ca, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5755256638610752390, guid: f62dcafb589b4a2419718a42874243ca, type: 3}
       propertyPath: m_LocalPosition.x
@@ -14104,7 +14112,7 @@ PrefabInstance:
       objectReference: {fileID: 5022602860645237092, guid: 75cf9080ea374fe4993e9b698ec9d722, type: 3}
     - target: {fileID: 5472023453060719744, guid: f62dcafb589b4a2419718a42874243ca, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5755256638610752390, guid: f62dcafb589b4a2419718a42874243ca, type: 3}
       propertyPath: m_LocalPosition.x

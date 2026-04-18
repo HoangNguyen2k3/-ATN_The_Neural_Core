@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Aircraft;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -91,6 +92,30 @@ public class IslandGameManager : MonoBehaviour {
         hudPanel?.SetActive(false);
         winPanel?.SetActive(false);
         losePanel?.SetActive(false);
+
+        // Trích xuất & Cấy Model ẢI vào đầu các Drones trước khi chơi
+        if (GameManager.Instance != null && difficultyModels != null && difficultyModels.Count > 0) {
+            var chosenDifficulty = GameManager.Instance.GameDifficultyIsland2;
+            // Tìm theo mức độ (Easy, Normal, Hard...)
+            var difficultyData = difficultyModels.Find(x => x.difficulty == chosenDifficulty);
+
+            if (difficultyData.model != null) {
+                // Lấy toàn bộ Drone có trong Scene map (kể cả những con đang bị ẩn bởi Timeline)
+                foreach (var drone in mapManager.drones) {
+                    // Do các Drone đang bị TẮT bởi Timeline nên chưa được Initialize trong ML-Agents.
+                    // Gọi hàm râu ria như SetModel sẽ bị NullReferenceException. 
+                    // Thay vào đó, ta tiêm trực tiếp vào component BehaviorParameters trươc lúc nó thức dậy.
+                    var bp = drone.GetComponent<Unity.MLAgents.Policies.BehaviorParameters>();
+                    if (bp != null) {
+                        bp.Model = difficultyData.model;
+                    }
+                }
+                Debug.Log($"[IslandGameManager] Đã cấy thành công bộ não AI mang độ khó: {chosenDifficulty}");
+            }
+            else {
+                Debug.LogWarning($"[IslandGameManager] Không tìm thấy ONNX Model ở mức {chosenDifficulty} trong mảng Config!");
+            }
+        }
 
         // Đảm bảo time không bị freeze từ lần trước
         Time.timeScale = 1f;

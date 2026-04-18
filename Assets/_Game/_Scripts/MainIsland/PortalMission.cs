@@ -1,4 +1,4 @@
-﻿using Aircraft;
+using Aircraft;
 using UnityEngine;
 
 public class PortalMission : MonoBehaviour {
@@ -62,6 +62,11 @@ public class PortalMission : MonoBehaviour {
     public void SetupDataToMission() {
         switch (currentIsland) {
             case CurrentIsland.MainMenuFlyIsland:
+                GameManager.Instance.numberLevel = numberOfLevel;
+                break;
+            case CurrentIsland.MainMenuIsland2:
+                // Truyền tham số số thứ tự level sang menu của Đảo 2 
+                // để hệ thống hiển thị / xử lý map preview tương ứng
                 GameManager.Instance.numberLevel = numberOfLevel;
                 break;
         }

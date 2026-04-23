@@ -94,6 +94,9 @@ public class BossArenaManager : MonoBehaviour {
         losePanel?.SetActive(false);
 
         Time.timeScale = 1f;
+
+        // === AUTO-START CHO TRAINING (xóa dòng này khi chuyển sang Scene Gameplay) ===
+        OnIntroFinished();
     }
 
     void Update() {

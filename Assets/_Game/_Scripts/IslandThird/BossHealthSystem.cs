@@ -1,5 +1,5 @@
-using UnityEngine;
 using System;
+using UnityEngine;
 
 /// <summary>
 /// Hệ thống HP chung cho cả Boss và Player trong Đảo 3.
@@ -34,22 +34,16 @@ public class BossHealthSystem : MonoBehaviour {
     private int _currentPhase = 1;
     private float _lastDamageTime = -999f;
     private bool _isDead = false;
-
-    // ─── Properties để các script khác đọc ──────────────────────
     public float CurrentHP => currentHP;
     public float HPRatio => currentHP / Mathf.Max(1f, maxHP); // 0.0 → 1.0
     public int CurrentPhase => _currentPhase;
     public bool IsDead => _isDead;
     public bool IsInvincible => (Time.time - _lastDamageTime) < invincibilityDuration;
 
-    // ════════════════════════════════════════════════════════════════
     void Awake() {
         currentHP = maxHP;
     }
 
-    /// <summary>
-    /// Reset HP về đầy (gọi khi bắt đầu Episode training hoặc Retry).
-    /// </summary>
     public void ResetHP() {
         currentHP = maxHP;
         _currentPhase = 1;
@@ -58,11 +52,6 @@ public class BossHealthSystem : MonoBehaviour {
         damageReduction = 0f;
     }
 
-    /// <summary>
-    /// Gây sát thương lên entity này.
-    /// </summary>
-    /// <param name="rawDamage">Sát thương thô trước khi giảm</param>
-    /// <returns>Sát thương thực tế sau khi giảm</returns>
     public float TakeDamage(float rawDamage) {
         if (_isDead) return 0f;
         if (IsInvincible) return 0f;
@@ -75,11 +64,7 @@ public class BossHealthSystem : MonoBehaviour {
 
         // Phát event
         OnDamaged?.Invoke(actualDamage, currentHP, maxHP);
-
-        // Check phase transition
         CheckPhaseTransition();
-
-        // Check chết
         if (currentHP <= 0f && !_isDead) {
             _isDead = true;
             OnDeath?.Invoke();
@@ -88,9 +73,6 @@ public class BossHealthSystem : MonoBehaviour {
         return actualDamage;
     }
 
-    /// <summary>
-    /// Hồi máu.
-    /// </summary>
     public void Heal(float amount) {
         if (_isDead) return;
         currentHP = Mathf.Min(currentHP + amount, maxHP);

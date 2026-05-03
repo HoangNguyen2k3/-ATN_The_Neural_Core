@@ -46,9 +46,9 @@ public class DummyPlayerBot : MonoBehaviour {
         if (myHealth == null) myHealth = GetComponent<BossHealthSystem>();
         if (combatAnalyzer == null) combatAnalyzer = GetComponent<PlayerCombatAnalyzer>();
 
-        // Auto-find Boss
+        // Auto-find Boss locally inside the same Arena
         if (bossTransform == null) {
-            var boss = FindFirstObjectByType<AdaptiveBossAgent>();
+            var boss = transform.parent.GetComponentInChildren<AdaptiveBossAgent>();
             if (boss != null) {
                 bossTransform = boss.transform;
                 bossHealth = boss.GetComponent<BossHealthSystem>();

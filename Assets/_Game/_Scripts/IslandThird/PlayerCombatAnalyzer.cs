@@ -42,9 +42,9 @@ public class PlayerCombatAnalyzer : MonoBehaviour {
         _windowTimer = windowDuration;
         _lastMoveDir = transform.forward;
 
-        // Auto-find Boss nếu chưa gán
+        // Auto-find Boss nếu chưa gán (tìm trong cùng Arena)
         if (bossTransform == null) {
-            var boss = FindFirstObjectByType<AdaptiveBossAgent>();
+            var boss = transform.parent.GetComponentInChildren<AdaptiveBossAgent>();
             if (boss != null) bossTransform = boss.transform;
         }
     }

@@ -2,22 +2,22 @@
     "AdaptiveBoss": {
         "checkpoints": [
             {
-                "steps": 178,
-                "file_path": "results\\Island3_Train\\AdaptiveBoss\\AdaptiveBoss-178.onnx",
-                "reward": -13.199999809265137,
-                "creation_time": 1776870366.261138,
+                "steps": 207967,
+                "file_path": "results\\Island3_Train\\AdaptiveBoss\\AdaptiveBoss-207967.onnx",
+                "reward": 10.949999982660467,
+                "creation_time": 1777722059.019562,
                 "auxillary_file_paths": [
-                    "results\\Island3_Train\\AdaptiveBoss\\AdaptiveBoss-178.pt"
+                    "results\\Island3_Train\\AdaptiveBoss\\AdaptiveBoss-207967.pt"
                 ]
             }
         ],
         "final_checkpoint": {
-            "steps": 178,
+            "steps": 207967,
             "file_path": "results\\Island3_Train\\AdaptiveBoss.onnx",
-            "reward": -13.199999809265137,
-            "creation_time": 1776870366.261138,
+            "reward": 10.949999982660467,
+            "creation_time": 1777722059.019562,
             "auxillary_file_paths": [
-                "results\\Island3_Train\\AdaptiveBoss\\AdaptiveBoss-178.pt"
+                "results\\Island3_Train\\AdaptiveBoss\\AdaptiveBoss-207967.pt"
             ]
         }
     },

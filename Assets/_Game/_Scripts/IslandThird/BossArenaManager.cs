@@ -16,6 +16,8 @@ public class BossArenaManager : MonoBehaviour {
     [Header("⚙️ Settings")]
     [Tooltip("Thời gian giới hạn trận đấu (giây). 0 = không giới hạn")]
     public float matchTimeLimit = 300f; // 5 phút
+    [Tooltip("Bật khi đang train AI. Tắt khi chơi thật.")]
+    public bool isTrainingMode = true;
 
     [Header("🔗 Scene Settings")]
     public string mainMenuSceneName = "MainMenu";
@@ -28,6 +30,7 @@ public class BossArenaManager : MonoBehaviour {
     public PlayerCombatAnalyzer playerAnalyzer;
     public Transform playerSpawnPoint;
     public Transform bossSpawnPoint;
+    public DummyPlayerBot dummyPlayerBot;
 
     // ─── UI ─────────────────────────────────────────────────────
     [Header("🖥️ UI — Panels")]
@@ -51,15 +54,25 @@ public class BossArenaManager : MonoBehaviour {
     private ArenaState _state = ArenaState.Intro;
     private float _matchTimer;
 
+    // Lưu vị trí ban đầu để reset mỗi Episode
+    private Vector3 _defaultBossPos;
+    private Quaternion _defaultBossRot;
+    private Vector3 _defaultPlayerPos;
+    private Quaternion _defaultPlayerRot;
+
     public bool IsFighting => _state == ArenaState.Fighting;
 
     // ════════════════════════════════════════════════════════════════
     #region Unity Lifecycle
 
     void Awake() {
-        if (Instance != null && Instance != this) {
-            Destroy(gameObject);
-            return;
+        // Khi Training: cho phép nhiều ArenaManager tồn tại song song
+        // Khi Gameplay: chỉ giữ 1 Instance (Singleton)
+        if (!isTrainingMode) {
+            if (Instance != null && Instance != this) {
+                Destroy(gameObject);
+                return;
+            }
         }
         Instance = this;
 
@@ -89,14 +102,30 @@ public class BossArenaManager : MonoBehaviour {
         loseMenuButton?.onClick.AddListener(GoToMainMenu);
 
         // Ẩn panels
-        hudPanel?.SetActive(false);
-        winPanel?.SetActive(false);
-        losePanel?.SetActive(false);
-
+        if (hudPanel != null) {
+            hudPanel?.SetActive(false);
+            winPanel?.SetActive(false);
+            losePanel?.SetActive(false);
+        }
         Time.timeScale = 1f;
 
-        // === AUTO-START CHO TRAINING (xóa dòng này khi chuyển sang Scene Gameplay) ===
-        OnIntroFinished();
+        // Auto-find DummyPlayerBot locally inside the same Arena
+        if (dummyPlayerBot == null) dummyPlayerBot = transform.parent.GetComponentInChildren<DummyPlayerBot>();
+
+        // Lưu vị trí ban đầu
+        if (bossAgent != null) {
+            _defaultBossPos = bossAgent.transform.position;
+            _defaultBossRot = bossAgent.transform.rotation;
+        }
+        if (dummyPlayerBot != null) {
+            _defaultPlayerPos = dummyPlayerBot.transform.position;
+            _defaultPlayerRot = dummyPlayerBot.transform.rotation;
+        }
+
+        // Auto-start khi Training
+        if (isTrainingMode) {
+            OnIntroFinished();
+        }
     }
 
     void Update() {
@@ -166,10 +195,12 @@ public class BossArenaManager : MonoBehaviour {
             bossAgent.EndEpisode();
         }
 
-        Time.timeScale = 0f;
-        Cursor.lockState = CursorLockMode.None;
-        hudPanel?.SetActive(false);
-        winPanel?.SetActive(true);
+        if (!isTrainingMode) {
+            Time.timeScale = 0f;
+            Cursor.lockState = CursorLockMode.None;
+            hudPanel?.SetActive(false);
+            winPanel?.SetActive(true);
+        }
     }
 
     /// <summary> Player chết hoặc hết giờ → Game Over </summary>
@@ -185,10 +216,12 @@ public class BossArenaManager : MonoBehaviour {
             bossAgent.EndEpisode();
         }
 
-        Time.timeScale = 0f;
-        Cursor.lockState = CursorLockMode.None;
-        hudPanel?.SetActive(false);
-        losePanel?.SetActive(true);
+        if (!isTrainingMode) {
+            Time.timeScale = 0f;
+            Cursor.lockState = CursorLockMode.None;
+            hudPanel?.SetActive(false);
+            losePanel?.SetActive(true);
+        }
     }
 
     #endregion
@@ -257,6 +290,21 @@ public class BossArenaManager : MonoBehaviour {
 
         bossHealth?.ResetHP();
         playerHealth?.ResetHP();
+
+        // Reset vị trí Boss
+        if (bossAgent != null) {
+            Vector3 bossPos = bossSpawnPoint != null ? bossSpawnPoint.position : _defaultBossPos;
+            Quaternion bossRot = bossSpawnPoint != null ? bossSpawnPoint.rotation : _defaultBossRot;
+            bossAgent.transform.position = bossPos;
+            bossAgent.transform.rotation = bossRot;
+        }
+
+        // Reset vị trí + phong cách DummyPlayer
+        if (dummyPlayerBot != null) {
+            Vector3 playerPos = playerSpawnPoint != null ? playerSpawnPoint.position : _defaultPlayerPos;
+            dummyPlayerBot.ResetBot(playerPos);
+            dummyPlayerBot.transform.rotation = playerSpawnPoint != null ? playerSpawnPoint.rotation : _defaultPlayerRot;
+        }
     }
 
     #endregion

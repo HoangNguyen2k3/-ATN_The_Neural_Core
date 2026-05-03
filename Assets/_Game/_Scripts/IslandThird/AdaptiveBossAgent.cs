@@ -68,9 +68,9 @@ public class AdaptiveBossAgent : Agent {
             animator.applyRootMotion = false;
         }
 
-        // Auto-find references
-        if (arenaManager == null) arenaManager = FindFirstObjectByType<BossArenaManager>();
-        if (playerAnalyzer == null) playerAnalyzer = FindFirstObjectByType<PlayerCombatAnalyzer>();
+        // Auto-find references locally inside the same Arena
+        if (arenaManager == null) arenaManager = transform.parent.GetComponentInChildren<BossArenaManager>();
+        if (playerAnalyzer == null) playerAnalyzer = transform.parent.GetComponentInChildren<PlayerCombatAnalyzer>();
         if (skillExecutor == null) skillExecutor = GetComponent<BossSkillExecutor>();
         if (myHealth == null) myHealth = GetComponent<BossHealthSystem>();
     }

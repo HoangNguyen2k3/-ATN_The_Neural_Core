@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -28,6 +28,8 @@ namespace Aircraft {
         public int numberLevel = 0;
         //Island 2
         public GameDifficulty GameDifficultyIsland2 { get; set; }
+        //Island 3
+        public GameDifficulty GameDifficultyIsland3 { get; set; }
         [Header("=============Data Game======================")]
         public GameDataConfig gameDataConfig;
         private void Awake() {

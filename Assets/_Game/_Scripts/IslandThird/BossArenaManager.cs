@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using Aircraft;
 using TMPro;
+using Unity.MLAgents.Policies;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -20,7 +24,18 @@ public class BossArenaManager : MonoBehaviour {
     public bool isTrainingMode = true;
 
     [Header("🔗 Scene Settings")]
-    public string mainMenuSceneName = "MainMenu";
+    public string mainMenuSceneName = "Island3";
+
+    // ─── AI Model Injection (Gameplay) ──────────────────────────
+    [Header("🧠 AI Models (Chỉ dùng khi Gameplay)")]
+    [Tooltip("Danh sách model ONNX theo mức độ khó. Gán trong Inspector.")]
+    public List<DifficultyModel> difficultyModels;
+
+    [Serializable]
+    public struct DifficultyModel {
+        public GameDifficulty difficulty;
+        public Unity.InferenceEngine.ModelAsset model;
+    }
 
     // ─── References ─────────────────────────────────────────────
     [Header("🔗 References")]
@@ -122,7 +137,34 @@ public class BossArenaManager : MonoBehaviour {
             _defaultPlayerRot = dummyPlayerBot.transform.rotation;
         }
 
-        // Auto-start khi Training
+        // ═══ GAMEPLAY MODE: Inject AI Model + tắt DummyBot ═══
+        if (!isTrainingMode) {
+            // Tắt DummyPlayerBot (gameplay dùng người chơi thật)
+            if (dummyPlayerBot != null) {
+                dummyPlayerBot.enabled = false;
+            }
+
+            // Inject ONNX model theo độ khó đã chọn
+            if (GameManager.Instance != null && difficultyModels != null && difficultyModels.Count > 0) {
+                var chosenDifficulty = GameManager.Instance.GameDifficultyIsland3;
+                var difficultyData = difficultyModels.Find(x => x.difficulty == chosenDifficulty);
+
+                if (difficultyData.model != null && bossAgent != null) {
+                    var bp = bossAgent.GetComponent<BehaviorParameters>();
+                    if (bp != null) {
+                        bp.Model = difficultyData.model;
+                    }
+                    Debug.Log($"[BossArenaManager] Đã cấy bộ não AI Boss mức: {chosenDifficulty}");
+                } else {
+                    Debug.LogWarning($"[BossArenaManager] Không tìm thấy ONNX Model cho mức {GameManager.Instance.GameDifficultyIsland3}!");
+                }
+            }
+
+            // Auto-start trận đấu (tạm thời không có cutscene)
+            OnIntroFinished();
+        }
+
+        // ═══ TRAINING MODE: Auto-start luôn ═══
         if (isTrainingMode) {
             OnIntroFinished();
         }

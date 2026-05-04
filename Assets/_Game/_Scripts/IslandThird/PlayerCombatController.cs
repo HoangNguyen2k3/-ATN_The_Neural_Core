@@ -128,13 +128,13 @@ public class PlayerCombatController : MonoBehaviour {
             StartDodge();
         }
 
-        // ═══ INPUT: Ranged Attack (Click trái) ═══
-        if (Input.GetMouseButtonDown(0) && _rangedTimer <= 0f && !_isBlocking) {
+        // ═══ INPUT: Ranged Attack (Phím 1) ═══
+        if (Input.GetKeyDown(KeyCode.Alpha1) && _rangedTimer <= 0f && !_isBlocking) {
             DoRangedAttack();
         }
 
-        // ═══ INPUT: Melee Attack (Click phải) ═══
-        if (Input.GetMouseButtonDown(1) && _meleeTimer <= 0f && !_isBlocking) {
+        // ═══ INPUT: Melee Attack (Phím 2) ═══
+        if (Input.GetKeyDown(KeyCode.Alpha2) && _meleeTimer <= 0f && !_isBlocking) {
             DoMeleeAttack();
         }
     }

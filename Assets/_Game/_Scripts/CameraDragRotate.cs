@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
-/// Third Person Camera Controller - Xoay camera quanh player giống Unity Starter Assets
-/// Script này điều khiển một "camera pivot" xoay quanh player
-/// Cinemachine sẽ follow pivot này thay vì player trực tiếp
+/// Third Person Camera Controller
+/// - Giữ CHUỘT PHẢI để xoay camera
+/// - Tự động tránh bức tường (Wall Collision)
+/// - Touch drag (Mobile)
 /// </summary>
 public class CameraDragRotate : MonoBehaviour {
     [Header("=== TARGET ===")]
@@ -11,8 +12,11 @@ public class CameraDragRotate : MonoBehaviour {
     public Transform target;
 
     [Header("=== CAMERA SETTINGS ===")]
-    [Tooltip("Khoảng cách từ camera đến player")]
+    [Tooltip("Khoảng cách lý tưởng từ camera đến player")]
     public float distance = 5f;
+
+    [Tooltip("Khoảng cách tối thiểu camera đến player (tránh xuyên tường)")]
+    public float minDistance = 1f;
 
     [Tooltip("Độ cao camera so với player")]
     public float height = 2f;
@@ -31,32 +35,45 @@ public class CameraDragRotate : MonoBehaviour {
     public float maxVerticalAngle = 60f;
 
     [Header("=== SMOOTHING ===")]
-    [Tooltip("Độ mượt của camera (cao = mượt hơn)")]
-    public float smoothTime = 0.1f;
+    [Tooltip("Độ mượt của camera")]
+    public float smoothTime = 0.08f;
+
+    [Tooltip("Tốc độ thu ngắn khi có tường (nhanh)")]
+    public float wallPullSpeed = 15f;
+
+    [Tooltip("Tốc độ kéo dài khi không có tường (chậm)")]
+    public float wallRecoverSpeed = 3f;
+
+    [Header("=== WALL COLLISION ===")]
+    [Tooltip("Layer mà camera sẽ tránh (thường là Default + Walls)")]
+    public LayerMask wallMask;
+
+    [Tooltip("Bán kính sphere cast để phát hiện tường (nhỏ hơn = chính xác hơn)")]
+    public float wallCheckRadius = 0.2f;
 
     [Header("=== INPUT ===")]
     [Tooltip("Bật/tắt đảo ngược trục Y")]
     public bool invertY = false;
 
     // Private variables
-    private float currentX = 0f;
-    private float currentY = 20f;
-    private Vector3 currentVelocity;
-    private Vector2 lastTouchPosition;
-    private bool isDragging = false;
+    private float _currentX = 0f;
+    private float _currentY = 20f;
+    private float _currentDistance;
+    private Vector3 _currentVelocity;
+    private Vector2 _lastTouchPos;
+    private bool _isDragging = false;
 
     void Start() {
-        // Khởi tạo góc ban đầu dựa trên vị trí hiện tại của camera
+        _currentDistance = distance;
         if (target != null) {
             Vector3 angles = transform.eulerAngles;
-            currentX = angles.y;
-            currentY = angles.x;
+            _currentX = angles.y;
+            _currentY = angles.x;
         }
     }
 
     void LateUpdate() {
         if (target == null) return;
-
         HandleInput();
         UpdateCameraPosition();
     }
@@ -65,88 +82,90 @@ public class CameraDragRotate : MonoBehaviour {
         float inputX = 0f;
         float inputY = 0f;
 
-        // ===== TOUCH INPUT (Mobile) =====
-        if (Input.touchCount > 0) {
+        // ===== TOUCH INPUT (Mobile) — 1 ngón tay vuốt =====
+        if (Input.touchCount == 1) {
             Touch touch = Input.GetTouch(0);
-
             switch (touch.phase) {
                 case TouchPhase.Began:
-                    lastTouchPosition = touch.position;
-                    isDragging = true;
+                    _lastTouchPos = touch.position;
+                    _isDragging = true;
                     break;
-
                 case TouchPhase.Moved:
-                    if (isDragging) {
-                        Vector2 delta = touch.position - lastTouchPosition;
-                        // Chia cho screen width để normalize
+                    if (_isDragging) {
+                        Vector2 delta = touch.position - _lastTouchPos;
                         inputX = delta.x / Screen.width * 180f;
                         inputY = delta.y / Screen.height * 90f;
-                        lastTouchPosition = touch.position;
+                        _lastTouchPos = touch.position;
                     }
                     break;
-
                 case TouchPhase.Ended:
                 case TouchPhase.Canceled:
-                    isDragging = false;
+                    _isDragging = false;
                     break;
             }
         }
-        // ===== MOUSE INPUT (PC) =====
+        // ===== MOUSE INPUT (PC) — Giữ CHUỘT PHẢI để xoay =====
         else if (Input.GetMouseButton(0)) {
             inputX = Input.GetAxis("Mouse X") * 5f;
             inputY = Input.GetAxis("Mouse Y") * 3f;
         }
 
-        // Áp dụng input vào góc xoay
-        currentX += inputX * rotationSpeedX * Time.deltaTime;
-        
+        // Áp dụng input
+        _currentX += inputX * rotationSpeedX * Time.deltaTime;
         float yDirection = invertY ? 1f : -1f;
-        currentY += inputY * rotationSpeedY * Time.deltaTime * yDirection;
-        
-        // Giới hạn góc dọc
-        currentY = Mathf.Clamp(currentY, minVerticalAngle, maxVerticalAngle);
+        _currentY += inputY * rotationSpeedY * Time.deltaTime * yDirection;
+        _currentY = Mathf.Clamp(_currentY, minVerticalAngle, maxVerticalAngle);
     }
 
     void UpdateCameraPosition() {
-        // Tính toán vị trí camera dựa trên góc xoay
-        Quaternion rotation = Quaternion.Euler(currentY, currentX, 0);
-        
-        // Vị trí offset từ target
-        Vector3 offset = rotation * new Vector3(0, 0, -distance);
-        offset.y += height;
-        
-        // Vị trí mục tiêu của camera
-        Vector3 targetPosition = target.position + offset;
-        
-        // Smooth movement
-        transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref currentVelocity, smoothTime);
-        
-        // Camera luôn nhìn vào target
-        Vector3 lookAtPoint = target.position + Vector3.up * (height * 0.5f);
-        transform.LookAt(lookAtPoint);
+        Quaternion rotation = Quaternion.Euler(_currentY, _currentX, 0);
+
+        // Gốc nhìn là vai/đầu của nhân vật
+        Vector3 pivotPos = target.position + Vector3.up * height;
+
+        // Hướng ra phía sau lưng nhân vật
+        Vector3 desiredDirection = rotation * Vector3.back;
+        float desiredDistance = distance;
+
+        // ── Wall Collision: SphereCast từ pivot ra phía sau ──
+        RaycastHit wallHit;
+        if (Physics.SphereCast(pivotPos, wallCheckRadius, desiredDirection, out wallHit, desiredDistance, wallMask)) {
+            // Có tường! Kéo camera vào gần hơn (trừ đi bán kính sphere)
+            desiredDistance = Mathf.Max(wallHit.distance - wallCheckRadius, minDistance);
+        }
+
+        // Smooth khoảng cách: thu nhanh khi có tường, kéo ra chậm khi hết tường
+        float distSpeed = (_currentDistance > desiredDistance) ? wallPullSpeed : wallRecoverSpeed;
+        _currentDistance = Mathf.Lerp(_currentDistance, desiredDistance, Time.deltaTime * distSpeed);
+
+        // Tính vị trí cuối
+        Vector3 targetPosition = pivotPos + desiredDirection * _currentDistance;
+
+        // Smooth di chuyển
+        transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref _currentVelocity, smoothTime);
+
+        // Camera nhìn vào pivot
+        transform.LookAt(pivotPos);
     }
 
-    // Gọi method này nếu muốn reset camera về vị trí mặc định
     public void ResetCamera() {
-        currentX = 0f;
-        currentY = 20f;
+        _currentX = 0f;
+        _currentY = 20f;
+        _currentDistance = distance;
     }
 
-    // Cho phép script khác set góc camera
     public void SetRotation(float x, float y) {
-        currentX = x;
-        currentY = Mathf.Clamp(y, minVerticalAngle, maxVerticalAngle);
+        _currentX = x;
+        _currentY = Mathf.Clamp(y, minVerticalAngle, maxVerticalAngle);
     }
 
 #if UNITY_EDITOR
     void OnDrawGizmosSelected() {
         if (target == null) return;
-        
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(target.position, 0.5f);
-        
+        Gizmos.DrawWireSphere(target.position + Vector3.up * height, 0.3f);
         Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(transform.position, target.position + Vector3.up * height * 0.5f);
+        Gizmos.DrawLine(transform.position, target.position + Vector3.up * height);
     }
 #endif
 }

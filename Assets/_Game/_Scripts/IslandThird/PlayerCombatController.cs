@@ -45,8 +45,10 @@ public class PlayerCombatController : MonoBehaviour {
 
     // ─── VFX References (Tùy chọn — gán sau) ────────────────────
     [Header("✨ VFX (Tùy chọn)")]
+    public Transform rangedOrigin;
     [Tooltip("Particle hoặc Line bắn ra khi Ranged Attack")]
     public GameObject rangedVFX;
+    public GameObject rangedExplosionVFX;
     [Tooltip("Particle khi Melee chém")]
     public GameObject meleeVFX;
     [Tooltip("Particle trail khi Dodge")]
@@ -148,14 +150,43 @@ public class PlayerCombatController : MonoBehaviour {
 
         // Raycast từ tâm camera (giống FPS/TPS shooter)
         Ray ray = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-        RaycastHit hit;
 
         bool didHit = false;
-        if (Physics.Raycast(ray, out hit, rangedRange, attackHitMask)) {
-            var hp = hit.collider.GetComponent<BossHealthSystem>();
-            if (hp != null && hp != _myHealth) {
-                hp.TakeDamage(rangedDamage);
-                didHit = true;
+        Vector3 hitPoint = ray.origin + ray.direction * rangedRange;
+
+        // RaycastAll: chạm mọi thứ, sau đó lọc kết quả
+        RaycastHit[] hits = Physics.RaycastAll(ray, rangedRange);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        RaycastHit? foundHit = null;
+        foreach (RaycastHit h in hits) {
+            // Bỏ qua chính bản thân Player và mọi child của Player
+            if (h.collider.gameObject == gameObject) continue;
+            if (h.collider.transform.IsChildOf(transform)) continue;
+            // Bỏ qua layer IgnoreRaycast (layer 2)
+            if (h.collider.gameObject.layer == 2) continue;
+            
+            foundHit = h;
+            break;
+        }
+
+        if (foundHit.HasValue) {
+            hitPoint = foundHit.Value.point;
+            
+            // Luôn nổ Particle ở điểm chạm (dù là tường, đất hay Boss)
+            if (rangedExplosionVFX != null) {
+                GameObject explosion = Instantiate(rangedExplosionVFX, hitPoint, Quaternion.identity);
+                Destroy(explosion, 1.5f);
+            }
+
+            // Chỉ gây sát thương nếu vật nằm trong attackHitMask
+            int hitLayer = foundHit.Value.collider.gameObject.layer;
+            if (((1 << hitLayer) & attackHitMask) != 0) {
+                var hp = foundHit.Value.collider.GetComponent<BossHealthSystem>();
+                if (hp != null && hp != _myHealth) {
+                    hp.TakeDamage(rangedDamage);
+                    didHit = true;
+                }
             }
         }
 
@@ -164,8 +195,13 @@ public class PlayerCombatController : MonoBehaviour {
 
         // VFX
         if (rangedVFX != null) {
-            // Bật tạm rồi tắt (hoặc dùng Object Pool)
             rangedVFX.SetActive(true);
+            LineRenderer lr = rangedVFX.GetComponent<LineRenderer>();
+            if (lr != null) {
+                Vector3 originPos = rangedOrigin != null ? rangedOrigin.position : transform.position + Vector3.up * 1.5f;
+                lr.SetPosition(0, originPos);
+                lr.SetPosition(1, hitPoint);
+            }
             Invoke(nameof(HideRangedVFX), 0.15f);
         }
 
@@ -259,7 +295,11 @@ public class PlayerCombatController : MonoBehaviour {
         if (animator != null) animator.SetTrigger("Dodge");
 
         // VFX
-        if (dodgeVFX != null) dodgeVFX.SetActive(true);
+        if (dodgeVFX != null) {
+            dodgeVFX.SetActive(true);
+            TrailRenderer tr = dodgeVFX.GetComponent<TrailRenderer>();
+            if (tr != null) tr.Clear();
+        }
 
         // Đăng ký dodge cho Analyzer
         _analyzer?.RegisterDodge();

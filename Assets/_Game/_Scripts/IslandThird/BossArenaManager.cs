@@ -125,7 +125,7 @@ public class BossArenaManager : MonoBehaviour {
         Time.timeScale = 1f;
 
         // Auto-find DummyPlayerBot locally inside the same Arena
-        if (dummyPlayerBot == null) dummyPlayerBot = transform.parent.GetComponentInChildren<DummyPlayerBot>();
+        if (dummyPlayerBot == null && isTrainingMode) dummyPlayerBot = transform.parent.GetComponentInChildren<DummyPlayerBot>();
 
         // Lưu vị trí ban đầu
         if (bossAgent != null) {
@@ -155,7 +155,8 @@ public class BossArenaManager : MonoBehaviour {
                         bp.Model = difficultyData.model;
                     }
                     Debug.Log($"[BossArenaManager] Đã cấy bộ não AI Boss mức: {chosenDifficulty}");
-                } else {
+                }
+                else {
                     Debug.LogWarning($"[BossArenaManager] Không tìm thấy ONNX Model cho mức {GameManager.Instance.GameDifficultyIsland3}!");
                 }
             }
@@ -231,18 +232,30 @@ public class BossArenaManager : MonoBehaviour {
 
         Debug.Log("[BossArenaManager] Boss bị hạ — Chiến thắng!");
 
-        // Thưởng cho Boss Agent (AI học rằng thua = xấu)
+        // Hiện anim dead
         if (bossAgent != null) {
+            Animator bossAnim = bossAgent.GetComponentInChildren<Animator>();
+            if (bossAnim != null) {
+                bossAnim.SetBool("IsDead", true);
+            }
+            
+            // Thưởng cho Boss Agent (AI học rằng thua = xấu)
             bossAgent.AddReward(-5f);
             bossAgent.EndEpisode();
         }
 
         if (!isTrainingMode) {
-            Time.timeScale = 0f;
-            Cursor.lockState = CursorLockMode.None;
-            hudPanel?.SetActive(false);
-            winPanel?.SetActive(true);
+            StartCoroutine(ShowWinScreenDelay());
         }
+    }
+
+    private System.Collections.IEnumerator ShowWinScreenDelay() {
+        yield return new WaitForSeconds(2.5f); // Đợi 2.5s để xem Boss gục ngã
+        
+        Time.timeScale = 0f;
+        Cursor.lockState = CursorLockMode.None;
+        hudPanel?.SetActive(false);
+        winPanel?.SetActive(true);
     }
 
     /// <summary> Player chết hoặc hết giờ → Game Over </summary>

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class ThirdPersonController : MonoBehaviour {
     [Header("Cài đặt chung")]

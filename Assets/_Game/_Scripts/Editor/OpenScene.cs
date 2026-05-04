@@ -27,6 +27,18 @@ public class OpenScenes : Editor {
     public static void OpenMenuDroneIsland() {
         OpenScene("_Game/_Scene/_Island2/MainMenuIsland2");
     }
+    [MenuItem("Open Scenes/_07_CombatIsland_#7")]
+    public static void OpenCombatIsland() {
+        OpenScene("_Game/_Scene/_Island3/Island3_Gameplay");
+    }
+    [MenuItem("Open Scenes/_08_MenuCombatIsland_#8")]
+    public static void OpenMenuCombatIsland() {
+        OpenScene("_Game/_Scene/_Island3/Island3_MenuBoard");
+    }
+    [MenuItem("Open Scenes/_09_TRAIN_CombatIsland_#9")]
+    public static void Train_OpenMenuCombatIsland() {
+        OpenScene("_Game/_Scene/_Island3/Train_Island3");
+    }
     private static void OpenScene(string path) {
         if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) {
             EditorSceneManager.OpenScene("Assets/" + path + ".unity");

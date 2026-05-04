@@ -21,16 +21,20 @@ public class BossSkillExecutor : MonoBehaviour {
     public float laserCooldown = 1f;
     public Transform laserOrigin;       // Vị trí bắn ra (mũi súng Boss)
     public LayerMask laserHitMask;      // Layer để Raycast bắn trúng
+    public GameObject laserVFX;         // Hiệu ứng tia Laser
+    public GameObject laserExplosionVFX;// Hiệu ứng nổ khi tia Laser chạm mục tiêu
 
     [Header("💨 Dash (Skill 2)")]
     public float dashDistance = 8f;
     public float dashSpeed = 30f;
     public float dashCooldown = 3f;
+    public GameObject dashVFX;          // Hiệu ứng lướt
 
     [Header("💥 AoE Slam (Skill 3)")]
     public float aoeDamage = 20f;
     public float aoeRadius = 5f;
     public float aoeCooldown = 5f;
+    public GameObject aoeVFX;           // Hiệu ứng đập đất nổ tung
 
     [Header("🛡️ Shield (Skill 4)")]
     public float shieldDuration = 2f;
@@ -41,6 +45,7 @@ public class BossSkillExecutor : MonoBehaviour {
     public float meleeDamage = 15f;
     public float meleeRange = 3f;
     public float meleeCooldown = 2f;
+    public GameObject meleeVFX;         // Hiệu ứng chém/đấm
 
     [Header("🔗 References")]
     public Animator animator;
@@ -147,21 +152,62 @@ public class BossSkillExecutor : MonoBehaviour {
         // Raycast bắn thẳng về phía trước
         Transform origin = laserOrigin != null ? laserOrigin : transform;
         Vector3 dir = target != null
-            ? (target.position - origin.position).normalized
+            ? (target.position + Vector3.up * 1f - origin.position).normalized
             : origin.forward;
+            
+        Vector3 hitPoint = origin.position + dir * laserRange;
 
-        RaycastHit hit;
-        if (Physics.Raycast(origin.position, dir, out hit, laserRange, laserHitMask)) {
-            var hp = hit.collider.GetComponent<BossHealthSystem>();
-            if (hp != null) {
-                hp.TakeDamage(laserDamage);
-                LastSkillHit = true;
-                return true;
-            }
+        // RaycastAll: chạm mọi thứ, bỏ qua bản thân Boss
+        RaycastHit[] hits = Physics.RaycastAll(origin.position, dir, laserRange);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        RaycastHit? foundHit = null;
+        foreach (RaycastHit h in hits) {
+            if (h.collider.gameObject == gameObject) continue;
+            if (h.collider.transform.IsChildOf(transform)) continue;
+            if (h.collider.gameObject.layer == 2) continue;
+            foundHit = h;
+            break;
         }
 
-        LastSkillHit = false;
-        return true; // Skill vẫn được xài, chỉ là miss
+        if (foundHit.HasValue) {
+            hitPoint = foundHit.Value.point;
+
+            // Luôn nổ Particle ở điểm chạm (đất, tường hay Player)
+            if (laserExplosionVFX != null) {
+                GameObject explosion = Instantiate(laserExplosionVFX, hitPoint, Quaternion.identity);
+                Destroy(explosion, 1.5f);
+            }
+
+            // Chỉ gây sát thương nếu trúng đối tượng thuộc laserHitMask
+            int hitLayer = foundHit.Value.collider.gameObject.layer;
+            if (((1 << hitLayer) & laserHitMask) != 0) {
+                var hp = foundHit.Value.collider.GetComponent<BossHealthSystem>();
+                if (hp != null) {
+                    hp.TakeDamage(laserDamage);
+                    LastSkillHit = true;
+                } else {
+                    LastSkillHit = false;
+                }
+            } else {
+                LastSkillHit = false;
+            }
+        } else {
+            LastSkillHit = false;
+        }
+
+        // Bật VFX tạm thời
+        if (laserVFX != null) {
+            laserVFX.SetActive(true);
+            LineRenderer lr = laserVFX.GetComponent<LineRenderer>();
+            if (lr != null) {
+                lr.SetPosition(0, origin.position);
+                lr.SetPosition(1, hitPoint);
+            }
+            Invoke(nameof(HideLaserVFX), 0.3f);
+        }
+
+        return true; // Skill vẫn được xài
     }
 
     bool DoDash() {
@@ -179,6 +225,8 @@ public class BossSkillExecutor : MonoBehaviour {
         _isDashing = true;
         _isCasting = true;
 
+        if (dashVFX != null) dashVFX.SetActive(true);
+
         Vector3 dashDir = target != null
             ? (target.position - transform.position).normalized
             : transform.forward;
@@ -195,12 +243,20 @@ public class BossSkillExecutor : MonoBehaviour {
         _isDashing = false;
         _isCasting = false;
         LastSkillHit = false;
+
+        if (dashVFX != null) dashVFX.SetActive(false);
     }
 
     bool DoAoeSlam() {
         _cooldownTimers[SKILL_AOE_SLAM] = aoeCooldown;
 
         if (animator != null) animator.SetTrigger("AoeSlam");
+
+        // Bật VFX
+        if (aoeVFX != null) {
+            aoeVFX.SetActive(true);
+            Invoke(nameof(HideAoeVFX), 0.5f);
+        }
 
         // Kiểm tra mọi Collider trong bán kính
         Collider[] hits = Physics.OverlapSphere(transform.position, aoeRadius);
@@ -252,6 +308,12 @@ public class BossSkillExecutor : MonoBehaviour {
 
         if (animator != null) animator.SetTrigger("Melee");
 
+        // Bật VFX
+        if (meleeVFX != null) {
+            meleeVFX.SetActive(true);
+            Invoke(nameof(HideMeleeVFX), 0.3f);
+        }
+
         // Kiểm tra Player có trong tầm đánh không
         if (target != null) {
             float dist = Vector3.Distance(transform.position, target.position);
@@ -270,6 +332,11 @@ public class BossSkillExecutor : MonoBehaviour {
     }
 
     #endregion
+
+    // ─── Tắt VFX ──────────────────────────────────────────────────
+    void HideLaserVFX() { if (laserVFX != null) laserVFX.SetActive(false); }
+    void HideAoeVFX() { if (aoeVFX != null) aoeVFX.SetActive(false); }
+    void HideMeleeVFX() { if (meleeVFX != null) meleeVFX.SetActive(false); }
 
     // ════════════════════════════════════════════════════════════════
     #region Debug

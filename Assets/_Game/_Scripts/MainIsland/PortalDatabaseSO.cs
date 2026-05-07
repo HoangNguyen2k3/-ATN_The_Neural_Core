@@ -5,7 +5,8 @@ public enum PortalType {
     Island1_Snow,
     Island1_Desert,
     Island2_Main,
-    SecretZone_01
+    SecretZone_01,
+    Island3_Main
 }
 
 [System.Serializable]

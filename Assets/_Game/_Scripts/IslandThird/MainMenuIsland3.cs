@@ -1,49 +1,29 @@
-using System;
-using System.Linq;
+using System.Collections.Generic;
 using Aircraft;
-using TMPro;
 using UnityEngine;
 
-/// <summary>
-/// Menu Đảo 3 — Chọn độ khó AI Boss rồi bắt đầu trận đấu.
-/// Pattern giống MainMenuIsland2.cs.
-/// </summary>
 public class MainMenuIsland3 : MonoBehaviour {
     [Header("UI Cấu Hình")]
-    [Tooltip("Dropdown chọn cấp độ / độ khó AI Boss")]
-    public TMP_Dropdown difficultyDropdown;
-
-    [Tooltip("Tên Scene gameplay Đảo 3")]
-    private string sceneToStart = "Island3Scene";
-
+    private string sceneToStart = "Island3_Gameplay";
     private GameDifficulty selectedDifficulty;
+    public List<GameObject> list_borderObj = new();
 
     void Start() {
-        if (difficultyDropdown != null) {
-            difficultyDropdown.ClearOptions();
-            difficultyDropdown.AddOptions(Enum.GetNames(typeof(GameDifficulty)).ToList());
-            selectedDifficulty = GameDifficulty.Easy;
-        } else {
-            Debug.LogWarning("[MainMenuIsland3] Chưa gán TMP_Dropdown.");
-        }
-
+        selectedDifficulty = GameDifficulty.Easy;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
-
-    /// <summary> Gắn vào Event OnValueChanged của Dropdown </summary>
     public void SetDifficulty(int difficultyIndex) {
         selectedDifficulty = (GameDifficulty)difficultyIndex;
-        Debug.Log("[MainMenuIsland3] Đã đổi AI Boss sang: " + selectedDifficulty);
+        foreach (GameObject obj in list_borderObj) {
+            obj.SetActive(false);
+        }
+        list_borderObj[difficultyIndex].SetActive(true);
     }
-
-    /// <summary> Gắn vào Nút Bắt Đầu (Start Button) </summary>
     public void StartButtonClicked() {
         GameManager.Instance.GameDifficultyIsland3 = selectedDifficulty;
         GameManager.Instance.LoadLevel(sceneToStart);
     }
-
-    /// <summary> Gắn vào Nút Thoát (Quit/Back) </summary>
     public void QuitButtonClicked() {
         GameManager.Instance.LoadLevel("StartScene");
     }

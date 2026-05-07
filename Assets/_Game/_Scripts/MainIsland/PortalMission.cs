@@ -69,7 +69,7 @@ public class PortalMission : MonoBehaviour {
                 // để hệ thống hiển thị / xử lý map preview tương ứng
                 GameManager.Instance.numberLevel = numberOfLevel;
                 break;
-            case CurrentIsland.Island3:
+            case CurrentIsland.Island3_MenuBoard:
                 // Island 3 không cần numberLevel,
                 // MainMenuIsland3 sẽ xử lý chọn độ khó AI
                 break;

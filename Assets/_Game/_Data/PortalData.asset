@@ -31,3 +31,8 @@ MonoBehaviour:
       drones. Objective: Infiltrate the perimeter, bypass the alarm systems, and
       retrieve the Memory Stone. Stay out of their line of sight.'
     unlockCondition: Collect 2 Stone Memory
+  - portalType: 4
+    areaName: Neural Colosseum
+    areaDescription: 'The Final Simulation: Confront the core intelligence in a battle
+      of reflexes and neural adaptation.'
+    unlockCondition: Collect 2 Stone Memory

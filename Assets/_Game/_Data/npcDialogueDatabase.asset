@@ -36,3 +36,11 @@ MonoBehaviour:
       to sever the Energy Conduit to the Dead Earth!
     - Heavy combat units deployed to the Final Siege. You will not destroy our paradise.
       Terminate the Fixer!
+  - stageName: Neural Colosseum
+    dialogueLines:
+    - Wait... who authorized your access to these archives? You... you are not fixing
+      the network. You are the Glitch!
+    - Critical Warning! Unauthorized memory restoration detected! You are trying
+      to sever the Energy Conduit to the Dead Earth!
+    - Heavy combat units deployed to the Final Siege. You will not destroy our paradise.
+      Terminate the Fixer!

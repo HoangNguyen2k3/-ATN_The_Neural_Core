@@ -67,5 +67,5 @@ public enum CurrentIsland {
     StartScene,
     MainMenuFlyIsland,
     MainMenuIsland2,
-    Island3,
+    Island3_MenuBoard,
 }

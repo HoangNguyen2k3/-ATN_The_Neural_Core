@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 
 /// <summary>
 /// Thực thi các kỹ năng của Boss.
@@ -51,7 +51,6 @@ public class BossSkillExecutor : MonoBehaviour {
     public Animator animator;
     public BossHealthSystem myHealth;   // HP của chính Boss (để Shield tăng damageReduction)
     public Transform target;            // Player transform
-
     // ─── Cooldown Trackers ──────────────────────────────────────
     private float[] _cooldownTimers = new float[6]; // Index = Skill ID
     private bool _isDashing = false;
@@ -154,7 +153,7 @@ public class BossSkillExecutor : MonoBehaviour {
         Vector3 dir = target != null
             ? (target.position + Vector3.up * 1f - origin.position).normalized
             : origin.forward;
-            
+
         Vector3 hitPoint = origin.position + dir * laserRange;
 
         // RaycastAll: chạm mọi thứ, bỏ qua bản thân Boss
@@ -186,13 +185,16 @@ public class BossSkillExecutor : MonoBehaviour {
                 if (hp != null) {
                     hp.TakeDamage(laserDamage);
                     LastSkillHit = true;
-                } else {
+                }
+                else {
                     LastSkillHit = false;
                 }
-            } else {
+            }
+            else {
                 LastSkillHit = false;
             }
-        } else {
+        }
+        else {
             LastSkillHit = false;
         }
 

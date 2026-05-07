@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Aircraft;
+using Lean.Pool;
 using TMPro;
 using Unity.MLAgents.Policies;
 using UnityEngine;
@@ -68,6 +70,8 @@ public class BossArenaManager : MonoBehaviour {
     // ─── Runtime ────────────────────────────────────────────────
     private ArenaState _state = ArenaState.Intro;
     private float _matchTimer;
+    [Header("=============Dead Anim============")]
+    public GameObject prefab_explosionDeadBoss;
 
     // Lưu vị trí ban đầu để reset mỗi Episode
     private Vector3 _defaultBossPos;
@@ -76,7 +80,6 @@ public class BossArenaManager : MonoBehaviour {
     private Quaternion _defaultPlayerRot;
 
     public bool IsFighting => _state == ArenaState.Fighting;
-
     // ════════════════════════════════════════════════════════════════
     #region Unity Lifecycle
 
@@ -228,29 +231,41 @@ public class BossArenaManager : MonoBehaviour {
     void OnBossDefeated() {
         if (_state != ArenaState.Fighting) return;
         _state = ArenaState.BossDefeated;
-
         Debug.Log("[BossArenaManager] Boss bị hạ — Chiến thắng!");
 
         // Hiện anim dead
         if (bossAgent != null) {
             Animator bossAnim = bossAgent.GetComponentInChildren<Animator>();
             if (bossAnim != null) {
-                bossAnim.SetBool("IsDead", true);
+                StartCoroutine(TripleExplosionSequence((bossAgent.transform.position + new Vector3(0, 3, 0)), 2f));
+                bossAnim.SetTrigger("IsDead");
+                Debug.LogWarning("[BossArenaManager] Explosion Done!");
             }
-            
+            else {
+                Debug.LogWarning("[BossArenaManager] Không tìm thấy Animator để chạy anim chết!");
+            }
+
             // Thưởng cho Boss Agent (AI học rằng thua = xấu)
             bossAgent.AddReward(-5f);
-            
+
             if (isTrainingMode) {
                 // Training: Kết thúc episode ngay lập tức để học vòng mới
                 bossAgent.EndEpisode();
-            } else {
-                // Gameplay: Tắt AI để Boss ngừng chạy, nằm yên diễn hoạt ảnh chết
+            }
+            else {
+                // Gameplay: Tắt AI để Boss ngừng chạy
                 bossAgent.enabled = false;
-                
-                // Tắt Collider hoặc Rigidbody nếu cần để tránh player đẩy xác
+
+                // Dọn dẹp đệ tử
+                BossMinionSpawner spawner = bossAgent.GetComponent<BossMinionSpawner>();
+                if (spawner != null) spawner.ClearAllMinions();
+
+                // Dừng hẳn vật lý nhưng KHÔNG bật isKinematic để tránh block Root Motion
                 var rb = bossAgent.GetComponent<Rigidbody>();
-                if (rb != null) rb.isKinematic = true;
+                if (rb != null) {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
             }
         }
 
@@ -258,10 +273,25 @@ public class BossArenaManager : MonoBehaviour {
             StartCoroutine(ShowWinScreenDelay());
         }
     }
+    private IEnumerator TripleExplosionSequence(Vector3 centerPos, float times) {
+        for (int i = 0; i < 3; i++) {
+            // Tạo độ lệch (offset) ngẫu nhiên để các vụ nổ không đè lên nhau
+            Vector3 randomOffset = new Vector3(
+                UnityEngine.Random.Range(-1.0f, 1.0f) * times, // Lệch sang trái/phải
+                UnityEngine.Random.Range(-0.5f, 0.5f) * times, // Lệch lên/xuống
+                UnityEngine.Random.Range(-1.0f, 1.0f) * times  // Lệch trước/sau
+            );
 
+            // Spawn vụ nổ
+            LeanPool.Spawn(prefab_explosionDeadBoss, centerPos + randomOffset, Quaternion.identity);
+
+            // Chờ 0.3 giây rồi mới nổ phát tiếp theo
+            yield return new WaitForSeconds(0.6f);
+        }
+    }
     private System.Collections.IEnumerator ShowWinScreenDelay() {
         yield return new WaitForSeconds(2.5f); // Đợi 2.5s để xem Boss gục ngã
-        
+
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         hudPanel?.SetActive(false);
@@ -274,6 +304,11 @@ public class BossArenaManager : MonoBehaviour {
         _state = ArenaState.PlayerDead;
 
         Debug.Log("[BossArenaManager] Player bị hạ — Game Over!");
+
+        if (bossAgent != null) {
+            BossMinionSpawner spawner = bossAgent.GetComponent<BossMinionSpawner>();
+            if (spawner != null) spawner.ClearAllMinions();
+        }
 
         // Thưởng cho Boss Agent (AI học rằng thắng = tốt)
         if (bossAgent != null) {

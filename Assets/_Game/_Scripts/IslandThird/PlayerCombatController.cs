@@ -128,8 +128,8 @@ public class PlayerCombatController : MonoBehaviour {
         // ═══ INPUT: Block (giữ Q) ═══
         HandleBlock();
 
-        // ═══ INPUT: Dodge (Shift) ═══
-        if (Input.GetKeyDown(KeyCode.LeftShift) && _dodgeTimer <= 0f) {
+        // ═══ INPUT: Dodge (Space) ═══
+        if (Input.GetKeyDown(KeyCode.Space) && _dodgeTimer <= 0f) {
             StartDodge();
         }
 

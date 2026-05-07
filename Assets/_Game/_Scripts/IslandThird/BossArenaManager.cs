@@ -225,7 +225,6 @@ public class BossArenaManager : MonoBehaviour {
         Debug.Log("[BossArenaManager] Trận đấu bắt đầu!");
     }
 
-    /// <summary> Boss bị hạ → Người chơi chiến thắng </summary>
     void OnBossDefeated() {
         if (_state != ArenaState.Fighting) return;
         _state = ArenaState.BossDefeated;
@@ -241,7 +240,18 @@ public class BossArenaManager : MonoBehaviour {
             
             // Thưởng cho Boss Agent (AI học rằng thua = xấu)
             bossAgent.AddReward(-5f);
-            bossAgent.EndEpisode();
+            
+            if (isTrainingMode) {
+                // Training: Kết thúc episode ngay lập tức để học vòng mới
+                bossAgent.EndEpisode();
+            } else {
+                // Gameplay: Tắt AI để Boss ngừng chạy, nằm yên diễn hoạt ảnh chết
+                bossAgent.enabled = false;
+                
+                // Tắt Collider hoặc Rigidbody nếu cần để tránh player đẩy xác
+                var rb = bossAgent.GetComponent<Rigidbody>();
+                if (rb != null) rb.isKinematic = true;
+            }
         }
 
         if (!isTrainingMode) {

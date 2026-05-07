@@ -70,6 +70,10 @@ public class CameraDragRotate : MonoBehaviour {
             _currentX = angles.y;
             _currentY = angles.x;
         }
+
+        // Khóa chuột vào giữa màn hình và ẩn chuột đi
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     void LateUpdate() {
@@ -104,8 +108,9 @@ public class CameraDragRotate : MonoBehaviour {
                     break;
             }
         }
-        // ===== MOUSE INPUT (PC) — Giữ CHUỘT PHẢI để xoay =====
-        else if (Input.GetMouseButton(0)) {
+        // ===== MOUSE INPUT (PC) — Di chuyển chuột tự do (Free-look) =====
+        else {
+            // Không cần giữ chuột phải nữa, di chuyển chuột là xoay
             inputX = Input.GetAxis("Mouse X") * 5f;
             inputY = Input.GetAxis("Mouse Y") * 3f;
         }
@@ -157,6 +162,24 @@ public class CameraDragRotate : MonoBehaviour {
     public void SetRotation(float x, float y) {
         _currentX = x;
         _currentY = Mathf.Clamp(y, minVerticalAngle, maxVerticalAngle);
+    }
+
+    void OnGUI() {
+        // Chỉ vẽ tâm ngắm nếu đang khóa chuột (đang chơi)
+        if (Cursor.lockState == CursorLockMode.Locked) {
+            float size = 10f;
+            float thickness = 2f;
+            float center_x = Screen.width / 2f;
+            float center_y = Screen.height / 2f;
+
+            // Đổi màu GUI
+            GUI.color = new Color(1f, 1f, 1f, 0.8f);
+
+            // Vẽ thanh ngang
+            GUI.DrawTexture(new Rect(center_x - size, center_y - thickness / 2, size * 2, thickness), Texture2D.whiteTexture);
+            // Vẽ thanh dọc
+            GUI.DrawTexture(new Rect(center_x - thickness / 2, center_y - size, thickness, size * 2), Texture2D.whiteTexture);
+        }
     }
 
 #if UNITY_EDITOR

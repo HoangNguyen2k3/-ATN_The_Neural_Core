@@ -93,6 +93,11 @@ public class PlayerCombatController : MonoBehaviour {
 
         if (mainCamera == null) mainCamera = Camera.main;
 
+        // Khi Player nhận sát thương → rung màn hình mạnh
+        if (_myHealth != null) {
+            _myHealth.OnDamaged += (dmg, hp, maxHp) => CombatJuice.ShakeHeavy();
+        }
+
         // Auto-find Boss nếu chưa gán
         if (bossTransform == null) {
             var boss = transform.parent != null
@@ -120,21 +125,21 @@ public class PlayerCombatController : MonoBehaviour {
             return; // Khi dodge, bỏ qua input khác
         }
 
-        // ═══ INPUT: Block (giữ Shift) ═══
+        // ═══ INPUT: Block (giữ Q) ═══
         HandleBlock();
 
-        // ═══ INPUT: Dodge (Space) ═══
-        if (Input.GetKeyDown(KeyCode.Space) && _dodgeTimer <= 0f) {
+        // ═══ INPUT: Dodge (Shift) ═══
+        if (Input.GetKeyDown(KeyCode.LeftShift) && _dodgeTimer <= 0f) {
             StartDodge();
         }
 
-        // ═══ INPUT: Ranged Attack (Phím 1) ═══
-        if (Input.GetKeyDown(KeyCode.Alpha1) && _rangedTimer <= 0f && !_isBlocking) {
+        // ═══ INPUT: Ranged Attack (Chuột Trái) ═══
+        if (Input.GetMouseButtonDown(0) && _rangedTimer <= 0f && !_isBlocking) {
             DoRangedAttack();
         }
 
-        // ═══ INPUT: Melee Attack (Phím 2) ═══
-        if (Input.GetKeyDown(KeyCode.Alpha2) && _meleeTimer <= 0f && !_isBlocking) {
+        // ═══ INPUT: Melee Attack (Chuột Phải) ═══
+        if (Input.GetMouseButtonDown(1) && _meleeTimer <= 0f && !_isBlocking) {
             DoMeleeAttack();
         }
     }
@@ -144,6 +149,15 @@ public class PlayerCombatController : MonoBehaviour {
 
     void DoRangedAttack() {
         _rangedTimer = rangedCooldown;
+
+        // Quay người về hướng camera khi tấn công
+        if (mainCamera != null) {
+            Vector3 camForward = mainCamera.transform.forward;
+            camForward.y = 0;
+            if (camForward.sqrMagnitude > 0.01f) {
+                transform.forward = camForward.normalized;
+            }
+        }
 
         // Animation
         if (animator != null) animator.SetTrigger("RangedAttack");
@@ -186,7 +200,12 @@ public class PlayerCombatController : MonoBehaviour {
                 if (hp != null && hp != _myHealth) {
                     hp.TakeDamage(rangedDamage);
                     didHit = true;
+                    CombatJuice.TriggerHitStop();
+                    CombatJuice.ShakeMedium();
                 }
+            } else {
+                // Chạm vật khác (tường/đất) — rung nhẹ như recoil
+                CombatJuice.ShakeLight();
             }
         }
 
@@ -220,6 +239,15 @@ public class PlayerCombatController : MonoBehaviour {
     void DoMeleeAttack() {
         _meleeTimer = meleeCooldown;
 
+        // Quay người về hướng camera khi tấn công
+        if (mainCamera != null) {
+            Vector3 camForward = mainCamera.transform.forward;
+            camForward.y = 0;
+            if (camForward.sqrMagnitude > 0.01f) {
+                transform.forward = camForward.normalized;
+            }
+        }
+
         // Animation
         if (animator != null) animator.SetTrigger("MeleeAttack");
 
@@ -235,6 +263,8 @@ public class PlayerCombatController : MonoBehaviour {
             if (hp != null && hp != _myHealth) {
                 hp.TakeDamage(meleeDamage);
                 didHit = true;
+                CombatJuice.TriggerHitStop();
+                CombatJuice.ShakeMedium();
             }
         }
 
@@ -304,6 +334,9 @@ public class PlayerCombatController : MonoBehaviour {
         // Đăng ký dodge cho Analyzer
         _analyzer?.RegisterDodge();
 
+        // Thông báo cho CombatJuice mở rộng FOV
+        CombatJuice.NotifyDashStart();
+
         Debug.Log("[PlayerCombat] Dodge Roll!");
     }
 
@@ -329,6 +362,9 @@ public class PlayerCombatController : MonoBehaviour {
 
         // Tắt VFX
         if (dodgeVFX != null) dodgeVFX.SetActive(false);
+
+        // Báo cho CombatJuice thu FOV về bình thường
+        CombatJuice.NotifyDashEnd();
 
         // Reset invincibility duration về mặc định
         if (_myHealth != null) {

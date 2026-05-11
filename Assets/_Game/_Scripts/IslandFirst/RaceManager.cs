@@ -222,6 +222,17 @@ namespace Aircraft {
                     agent.FreezeAgent();
 
                 gameoverUI.gameObject.SetActive(true);
+
+                // Lưu tiến trình viên đá — chỉ khi player về đích top 2
+                if (DataManager.Ins != null && DataManager.Ins.isLoaded && GameManager.Instance != null) {
+                    int playerPlace = (aircraftStatuses != null && aircraftStatuses.ContainsKey(FollowAgent))
+                        ? aircraftStatuses[FollowAgent].place
+                        : 999;
+                    if (playerPlace <= 2) {
+                        int stoneIndex = GameManager.Instance.numberLevel; // 0=Snow, 1=Desert
+                        DataManager.Ins.AddStoneProgress(stoneIndex, GameManager.Instance.DifficultyCountIsland1);
+                    }
+                }
             }
         }
 

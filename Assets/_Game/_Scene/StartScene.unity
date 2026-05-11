@@ -182452,8 +182452,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   myPortalType: 2
   isOpenPortal: 1
-  hasMemoryStone: 0
+  stoneIndex: -1
+  totalDifficultyLevels: 4
   currentIsland: 2
+  teleportDestination: {fileID: 0}
   numberOfLevel: 0
   sceneToLoad: 
   myTextData:
@@ -198608,6 +198610,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4435824318356962, guid: 5b75a75bddba4a440a7c72c6a9157623, type: 3}
   m_PrefabInstance: {fileID: 1036717689}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1037012270
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1037012271}
+  m_Layer: 0
+  m_Name: Final Destination
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1037012271
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1037012270}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -30.705118, y: 446.08945, z: 30.033678}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1037079803
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -220028,8 +220061,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   myPortalType: 4
   isOpenPortal: 1
-  hasMemoryStone: 0
+  stoneIndex: -1
+  totalDifficultyLevels: 4
   currentIsland: 3
+  teleportDestination: {fileID: 0}
   numberOfLevel: 0
   sceneToLoad: 
   myTextData:
@@ -224523,6 +224558,7 @@ GameObject:
   - component: {fileID: 1172044200}
   - component: {fileID: 1172044199}
   - component: {fileID: 1172044198}
+  - component: {fileID: 1172044201}
   m_Layer: 5
   m_Name: StoneDialog
   m_TagString: Untagged
@@ -224617,6 +224653,27 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &1172044201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1172044196}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2ea9e23567a4674999bb35bdb2f0606, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slots:
+  - fillImage: {fileID: 422426299}
+    percentLabel: {fileID: 926992916}
+  - fillImage: {fileID: 1837660524}
+    percentLabel: {fileID: 615794721}
+  - fillImage: {fileID: 1269848229}
+    percentLabel: {fileID: 389903042}
+  - fillImage: {fileID: 148537711}
+    percentLabel: {fileID: 950157159}
 --- !u!1001 &1172340696
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -295697,8 +295754,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   myPortalType: 1
   isOpenPortal: 1
-  hasMemoryStone: 0
+  stoneIndex: -1
+  totalDifficultyLevels: 4
   currentIsland: 1
+  teleportDestination: {fileID: 0}
   numberOfLevel: 0
   sceneToLoad: 
   myTextData:
@@ -368493,8 +368552,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   myPortalType: 0
   isOpenPortal: 1
-  hasMemoryStone: 0
+  stoneIndex: -1
+  totalDifficultyLevels: 4
   currentIsland: 1
+  teleportDestination: {fileID: 0}
   numberOfLevel: 1
   sceneToLoad: 
   myTextData:
@@ -401911,13 +401972,70 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d7fa0f67bbacf674ea7f6be492ce48fd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2104813218}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d7fa0f67bbacf674ea7f6be492ce48fd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2104813219}
   m_SourcePrefab: {fileID: 100100000, guid: d7fa0f67bbacf674ea7f6be492ce48fd, type: 3}
 --- !u!4 &2104813216 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d7fa0f67bbacf674ea7f6be492ce48fd, type: 3}
   m_PrefabInstance: {fileID: 2104813215}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2104813217 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d7fa0f67bbacf674ea7f6be492ce48fd, type: 3}
+  m_PrefabInstance: {fileID: 2104813215}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2104813218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104813217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c6daffd0584ac644b818aa34eeaad7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  myPortalType: 5
+  isOpenPortal: 0
+  stoneIndex: -2
+  totalDifficultyLevels: 4
+  currentIsland: 0
+  teleportDestination: {fileID: 1037012271}
+  numberOfLevel: 0
+  sceneToLoad: 
+  myTextData:
+    portalType: 0
+    areaName: 
+    areaDescription: 
+    unlockCondition: 
+--- !u!65 &2104813219
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104813217}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.019523408, y: 0.01984991, z: 0.037631236}
+  m_Center: {x: -0.00030638574, y: 0.0005633667, z: 0.018748147}
 --- !u!1001 &2104934312
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -410871,3 +410989,4 @@ SceneRoots:
   - {fileID: 1407478028}
   - {fileID: 120271076}
   - {fileID: 1798404840}
+  - {fileID: 1037012271}

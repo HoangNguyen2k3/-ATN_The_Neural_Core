@@ -270,6 +270,10 @@ public class BossArenaManager : MonoBehaviour {
         }
 
         if (!isTrainingMode) {
+            // Lưu tiến trình viên đá Island 3 (stoneIndex = 3)
+            if (DataManager.Ins != null && DataManager.Ins.isLoaded && GameManager.Instance != null)
+                DataManager.Ins.AddStoneProgress(3, GameManager.Instance.DifficultyCountIsland3);
+
             StartCoroutine(ShowWinScreenDelay());
         }
     }

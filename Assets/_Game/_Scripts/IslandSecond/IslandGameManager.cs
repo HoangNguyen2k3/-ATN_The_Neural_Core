@@ -162,6 +162,10 @@ public class IslandGameManager : MonoBehaviour {
         if (_state != GameState.Playing) return;
         _state = GameState.Won;
 
+        // Lưu tiến trình viên đá Island 2 (stoneIndex = 2)
+        if (DataManager.Ins != null && DataManager.Ins.isLoaded && GameManager.Instance != null)
+            DataManager.Ins.AddStoneProgress(2, GameManager.Instance.DifficultyCountIsland2);
+
         Debug.Log("[IslandGameManager] Thoát thành công — Chiến thắng!");
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;

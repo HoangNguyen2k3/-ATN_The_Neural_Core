@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+[DefaultExecutionOrder(-100)]
 public class DataManager : MonoBehaviour {
     public static DataManager Ins { get; private set; }
     public bool isLoaded = false;
@@ -21,7 +22,7 @@ public class DataManager : MonoBehaviour {
             Ins = this;
             DontDestroyOnLoad(gameObject);
         }
-        //        LoadData();
+        LoadData();
     }
     public void LoadData() {
         if (isLoaded) return;
@@ -33,6 +34,10 @@ public class DataManager : MonoBehaviour {
             if (gameSave != null)
                 Debug.Log(gameSave.isNew);
         }
+
+        // Validate mảng đá (save cũ không có trường này sẽ bị null sau FromJson)
+        if (gameSave != null && (gameSave.stonePercent == null || gameSave.stonePercent.Length < 4))
+            gameSave.stonePercent = new float[4];
 
         // Kiểm tra nếu gameSave vẫn null (lần đầu thật sự) hoặc bị ép buộc là mới
         if (gameSave == null || gameSave.isNew) {
@@ -80,5 +85,58 @@ public class DataManager : MonoBehaviour {
     public void UpdateVibrateAmount(float amount) {
         gameSave.vibrateAmount = amount;
         SaveData();
+    }
+
+    // ── Stone Progress ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Cộng dồn % vào viên đá sau mỗi lần thắng.
+    /// contribution = 1 / totalLevels → mọi win đều cộng cùng 1 lượng.
+    /// Ví dụ: 4 cấp → mỗi win +25%. 1 lần Impossible = 4 lần Easy.
+    /// </summary>
+    public void AddStoneProgress(int stoneIndex, int totalLevels) {
+        if (stoneIndex < 0 || stoneIndex >= 4) return;
+        if (totalLevels <= 0) return;
+
+        float contribution = 1f / totalLevels;
+        float newVal = Mathf.Min(1f, gameSave.stonePercent[stoneIndex] + contribution);
+        gameSave.stonePercent[stoneIndex] = newVal;
+        SaveData();
+        Debug.Log($"[Stone] #{stoneIndex}: +{contribution * 100f:F1}% → tổng {newVal * 100f:F1}%");
+    }
+
+    /// <summary> Trả về % tích lũy (0.0 → 1.0) của viên đá. </summary>
+    public float GetStonePercent(int stoneIndex) {
+        if (stoneIndex < 0 || stoneIndex >= 4) return 0f;
+        return gameSave.stonePercent[stoneIndex];
+    }
+
+    /// <summary> True khi cả 4 viên đá đều đạt 100%. </summary>
+    public bool AllStonesAt100() {
+        if (gameSave?.stonePercent == null) return false;
+        for (int i = 0; i < 4; i++)
+            if (gameSave.stonePercent[i] < 1f) return false;
+        return true;
+    }
+
+    // ── Hub Player Position ─────────────────────────────────────────
+
+    /// <summary> Lưu vị trí player trong đảo chính. </summary>
+    public void SaveHubPosition(Vector3 pos, float rotY) {
+        gameSave.hubPosX = pos.x;
+        gameSave.hubPosY = pos.y;
+        gameSave.hubPosZ = pos.z;
+        gameSave.hubRotY = rotY;
+        gameSave.hasHubPosition = true;
+        SaveData();
+    }
+
+    /// <summary>
+    /// Lấy vị trí hub đã lưu. Trả về false nếu chưa có lần nào được lưu.
+    /// </summary>
+    public bool TryGetHubPosition(out Vector3 pos, out float rotY) {
+        pos = new Vector3(gameSave.hubPosX, gameSave.hubPosY, gameSave.hubPosZ);
+        rotY = gameSave.hubRotY;
+        return gameSave.hasHubPosition;
     }
 }

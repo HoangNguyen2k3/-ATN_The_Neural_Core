@@ -36,3 +36,8 @@ MonoBehaviour:
     areaDescription: 'The Final Simulation: Confront the core intelligence in a battle
       of reflexes and neural adaptation.'
     unlockCondition: Collect 2 Stone Memory
+  - portalType: 5
+    areaName: Final Battle
+    areaDescription: 'The Final Simulation: Confront the core intelligence in a battle
+      of reflexes and neural adaptation.'
+    unlockCondition: Unlock 4 stones

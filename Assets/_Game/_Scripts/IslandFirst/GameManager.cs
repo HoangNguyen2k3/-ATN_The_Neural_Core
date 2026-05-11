@@ -21,15 +21,18 @@ namespace Aircraft {
         [Header("============Loading==============")]
         public GameObject canvasLoading;
         public UI_Loading ui_fakeLoading;
-
+        public DataManager dataManager;
         [Header("=============Data Change Scene==============")]
         //Island 1
         public GameDifficulty GameDifficultyIsland1 { get; set; }
         public int numberLevel = 0;
+        public int DifficultyCountIsland1 { get; set; } = 4;
         //Island 2
         public GameDifficulty GameDifficultyIsland2 { get; set; }
+        public int DifficultyCountIsland2 { get; set; } = 4;
         //Island 3
         public GameDifficulty GameDifficultyIsland3 { get; set; }
+        public int DifficultyCountIsland3 { get; set; } = 3;
         [Header("=============Data Game======================")]
         public GameDataConfig gameDataConfig;
         private void Awake() {
@@ -49,7 +52,9 @@ namespace Aircraft {
         public void LoadLevel(string levelName) {
             StartCoroutine(LoadLevelAsync(levelName));
         }
-
+        private void Start() {
+            dataManager.Init();
+        }
         private IEnumerator LoadLevelAsync(string levelName) {
             AsyncOperation operation = SceneManager.LoadSceneAsync(levelName);
             while (operation.isDone == false) {
@@ -68,4 +73,5 @@ public enum CurrentIsland {
     MainMenuFlyIsland,
     MainMenuIsland2,
     Island3_MenuBoard,
+    FinalBossScene,
 }

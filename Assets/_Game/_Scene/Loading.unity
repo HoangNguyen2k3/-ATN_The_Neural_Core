@@ -583,6 +583,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 445567691}
+  - component: {fileID: 445567692}
   m_Layer: 0
   m_Name: DataManager
   m_TagString: Untagged
@@ -605,6 +606,34 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &445567692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 445567690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c659b649a0cc15a4ab5a9427cfd7ffc8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isLoaded: 0
+  gameSave:
+    isNew: 0
+    soundVolume: 1
+    musicVolume: 0
+    vibrateAmount: 0
+    stonePercent:
+    - 0
+    - 0
+    - 0
+    - 0
+    hasHubPosition: 0
+    hubPosX: 0
+    hubPosY: 0
+    hubPosZ: 0
+    hubRotY: 0
 --- !u!1 &586098346
 GameObject:
   m_ObjectHideFlags: 0
@@ -848,6 +877,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   canvasLoading: {fileID: 586098346}
   ui_fakeLoading: {fileID: 929518945}
+  dataManager: {fileID: 445567692}
   numberLevel: 0
   gameDataConfig: {fileID: 11400000, guid: 013e77f04a8ca5147a557d7fb061106e, type: 2}
 --- !u!4 &798275754

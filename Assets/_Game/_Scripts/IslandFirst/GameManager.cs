@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Aircraft {
     public enum GameDifficulty {
@@ -40,6 +38,8 @@ namespace Aircraft {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, true);
+                Application.targetFrameRate = 60;
+                QualitySettings.vSyncCount = 0;
             }
             else {
                 Destroy(gameObject);
@@ -49,22 +49,24 @@ namespace Aircraft {
         public void OnApplicationQuit() {
             Instance = null;
         }
-        public void LoadLevel(string levelName) {
-            StartCoroutine(LoadLevelAsync(levelName));
+        /// <summary>
+        /// Điểm vào duy nhất cho MỌI chuyển scene trong game.
+        /// Bật canvas loading → load async thật → tắt canvas khi xong.
+        /// </summary>
+        public void GoToScene(string sceneName) {
+            canvasLoading.SetActive(true);
+            ui_fakeLoading.OnLoadComplete = () => canvasLoading.SetActive(false);
+            ui_fakeLoading.ShowRealLoading(sceneName);
         }
+
+        // Giữ lại để backward-compatible, redirect sang GoToScene
+        public void LoadLevel(string levelName) => GoToScene(levelName);
+        public void ShowFakeLoadingGame(string levelName) => GoToScene(levelName);
+
         private void Start() {
             dataManager.Init();
         }
-        private IEnumerator LoadLevelAsync(string levelName) {
-            AsyncOperation operation = SceneManager.LoadSceneAsync(levelName);
-            while (operation.isDone == false) {
-                yield return null;
-            }
-            Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, true);
-        }
-        public void ShowFakeLoadingGame(string levelName) {
-            ui_fakeLoading.ShowFakeLoading(2, levelName);
-        }
+
     }
 }
 [Serializable]

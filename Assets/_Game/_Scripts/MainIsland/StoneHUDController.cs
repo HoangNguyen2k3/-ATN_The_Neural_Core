@@ -32,7 +32,7 @@ public class StoneHUDController : MonoBehaviour {
                 slots[i].fillImage.fillAmount = pct;
 
             if (slots[i].percentLabel != null)
-                slots[i].percentLabel.text = pctInt > 0 ? $"{pctInt}%" : "--";
+                slots[i].percentLabel.text = pctInt > 0 ? $"{pctInt}%" : "0%";
         }
     }
 }

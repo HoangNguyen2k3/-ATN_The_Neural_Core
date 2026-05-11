@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -20,68 +20,99 @@ public class UI_Loading : MonoBehaviour {
 
     [Header("Scene Loading")]
     public string sceneName;
-    public float loadingTime = 2f;
-    public float loadingEndTime = 1f;
-    public float progressLimitAmount = 0.85f;
+    [Tooltip("Thời gian tối thiểu hiển thị loading screen (tránh flicker khi scene load quá nhanh)")]
+    public float minDisplayTime = 0.8f;
+    [Tooltip("Thời gian smooth fill từ 95% lên 100%")]
+    public float loadingEndTime = 0.4f;
 
-    [Header("Fake Loading")]
+    [Header("Fake Loading (legacy)")]
     public float fakeLoadingTime = 2f;
     public float textAnimSpeed = 0.4f;
+
+    // GameManager đăng ký callback này để tắt canvas khi load xong
+    public System.Action OnLoadComplete;
 
     private AsyncOperation asyncOperation;
 
     private void Start() {
-        if (loadingType == LoadingType.SceneLoading)
+        if (loadingType == LoadingType.SceneLoading && !string.IsNullOrEmpty(sceneName))
             StartCoroutine(SceneLoadingRoutine());
     }
+
+    // ── Public API ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Bắt đầu load scene thật với progress bar theo real async progress.
+    /// Gọi từ GameManager.GoToScene().
+    /// </summary>
+    public void ShowRealLoading(string targetScene) {
+        sceneName = targetScene;
+        gameObject.SetActive(true);
+        StartCoroutine(SceneLoadingRoutine());
+    }
+
+    /// <summary> Legacy fake loading — giữ lại để backward compatible. </summary>
+    public void ShowFakeLoading(float duration, string nameScene) {
+        sceneName = nameScene;
+        fakeLoadingTime = duration;
+        gameObject.SetActive(true);
+        StartCoroutine(FakeLoadingRoutine());
+    }
+
+    // ── Coroutines ──────────────────────────────────────────────────
+
     IEnumerator SceneLoadingRoutine() {
-        float time = 0;
-        loadingFill.fillAmount = 0;
+        if (loadingFill != null) loadingFill.fillAmount = 0f;
+        SetProgressText(0);
 
-        while (time < loadingTime) {
-            time += Time.deltaTime;
-
-            float progress = Mathf.Lerp(0, progressLimitAmount, time / loadingTime);
-            loadingFill.fillAmount = progress;
-
-            if (textProcess != null)
-                textProcess.text = "Loading " + Mathf.RoundToInt(progress * 100) + "%";
-
-            yield return null;
-        }
-
+        // Bắt đầu load ngay lập tức — không fake wait
         asyncOperation = SceneManager.LoadSceneAsync(sceneName);
         asyncOperation.allowSceneActivation = false;
 
-        while (asyncOperation.progress < 0.9f) {
-            float progress = Mathf.Lerp(progressLimitAmount, 0.95f, asyncOperation.progress / 0.9f);
-            loadingFill.fillAmount = progress;
+        float elapsed = 0f;
 
-            if (textProcess != null)
-                textProcess.text = "Loading " + Mathf.RoundToInt(progress * 100) + "%";
+        // Chờ đến khi load xong (progress >= 0.9) VÀ đã hiện đủ minDisplayTime
+        while (asyncOperation.progress < 0.9f || elapsed < minDisplayTime) {
+            elapsed += Time.deltaTime;
 
-            yield return null;
-        }
+            float realPct = asyncOperation.progress / 0.9f;       // 0 → 1
+            float timePct = minDisplayTime > 0f
+                ? elapsed / minDisplayTime
+                : 1f;
 
-        time = 0;
+            // Hiện giá trị nhỏ hơn: không bao giờ chạy nhanh hơn load thật
+            float display = Mathf.Min(realPct, timePct) * 0.95f;
 
-        while (time < loadingEndTime) {
-            time += Time.deltaTime;
-
-            float progress = Mathf.Lerp(loadingFill.fillAmount, 1f, time / loadingEndTime);
-            loadingFill.fillAmount = progress;
-
-            if (textProcess != null)
-                textProcess.text = "Loading " + Mathf.RoundToInt(progress * 100) + "%";
+            if (loadingFill != null) loadingFill.fillAmount = display;
+            SetProgressText(Mathf.RoundToInt(display * 100f));
 
             yield return null;
         }
 
-        if (textProcess != null)
-            textProcess.text = "Loading 100%";
+        // Smooth fill 95% → 100%
+        float t = 0f;
+        float startFill = loadingFill != null ? loadingFill.fillAmount : 0.95f;
+        while (t < loadingEndTime) {
+            t += Time.deltaTime;
+            float fill = Mathf.Lerp(startFill, 1f, t / loadingEndTime);
+            if (loadingFill != null) loadingFill.fillAmount = fill;
+            SetProgressText(Mathf.RoundToInt(fill * 100f));
+            yield return null;
+        }
 
+        if (loadingFill != null) loadingFill.fillAmount = 1f;
+        SetProgressText(100);
+
+        // Kích hoạt scene
         asyncOperation.allowSceneActivation = true;
+
+        // Đợi 1 frame để scene switch xong rồi mới báo hoàn thành
+        yield return null;
+
+        OnLoadComplete?.Invoke();
+        gameObject.SetActive(false);
     }
+
     IEnumerator FakeLoadingRoutine() {
         int dotCount = 0;
         float timer = 0;
@@ -91,20 +122,23 @@ public class UI_Loading : MonoBehaviour {
 
         while (asyncOperation.progress < 0.9f || timer < fakeLoadingTime) {
             timer += textAnimSpeed;
-
             dotCount = (dotCount + 1) % 4;
-            textLoading.text = "Loading" + new string('.', dotCount);
-
+            if (textLoading != null)
+                textLoading.text = "Loading" + new string('.', dotCount);
             yield return new WaitForSeconds(textAnimSpeed);
         }
+
         asyncOperation.allowSceneActivation = true;
         yield return new WaitForSeconds(1);
+
+        OnLoadComplete?.Invoke();
         gameObject.SetActive(false);
     }
-    public void ShowFakeLoading(float duration, string nameScene) {
-        sceneName = nameScene;
-        fakeLoadingTime = duration;
-        gameObject.SetActive(true);
-        StartCoroutine(FakeLoadingRoutine());
+
+    // ── Helpers ─────────────────────────────────────────────────────
+
+    private void SetProgressText(int percent) {
+        if (textProcess != null)
+            textProcess.text = $"Loading {percent}%";
     }
 }

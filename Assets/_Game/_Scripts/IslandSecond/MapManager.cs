@@ -39,6 +39,10 @@ public class MapManager : MonoBehaviour {
     private float stageStartTime = 0f;
     private readonly Dictionary<AdvancedSeekerDrone, float> stuckTimerByDrone = new();
 
+    // Giảm frequency check từ 60fps → 5 lần/giây để tiết kiệm CPU
+    private float _checkTimer;
+    private const float CHECK_INTERVAL = 0.2f;
+
     void Awake() {
         cellSize = mapSize / gridResolution;
         heatmap = new float[gridResolution, gridResolution];
@@ -51,16 +55,17 @@ public class MapManager : MonoBehaviour {
     }
 
     void Update() {
-        if (isResetting) return;
+        if (isResetting || isGameplayMode) return;
         if (drones == null || drones.Count == 0) return;
 
-        // Gameplay mode: không chạy logic reset/respawn của training.
-        if (isGameplayMode) {
-            return;
-        }
+        // Throttle: chỉ check 5 lần/giây thay vì 60 lần/giây
+        _checkTimer += Time.deltaTime;
+        if (_checkTimer < CHECK_INTERVAL) return;
+        _checkTimer = 0f;
 
         if (Time.time - stageStartTime >= stageTimeLimit) {
             EndStageAndReset(false);
+            return;
         }
 
         foreach (var drone in drones) {
@@ -255,12 +260,12 @@ public class MapManager : MonoBehaviour {
 
         float horizontalSpeed = new Vector2(droneRb.linearVelocity.x, droneRb.linearVelocity.z).magnitude;
 
-        if (!stuckTimerByDrone.ContainsKey(drone)) {
+        if (!stuckTimerByDrone.ContainsKey(drone))
             stuckTimerByDrone[drone] = 0f;
-        }
 
         if (horizontalSpeed < stuckSpeedThreshold) {
-            stuckTimerByDrone[drone] += Time.deltaTime;
+            // Dùng CHECK_INTERVAL vì hàm này chỉ được gọi mỗi 0.2s
+            stuckTimerByDrone[drone] += CHECK_INTERVAL;
 
             if (stuckTimerByDrone[drone] >= stuckDurationToReset) {
                 drone.AddReward(stuckPenalty);

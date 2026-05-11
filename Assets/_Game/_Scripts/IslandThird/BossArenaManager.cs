@@ -418,12 +418,18 @@ public class BossArenaManager : MonoBehaviour {
 
     public void RestartLevel() {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        if (GameManager.Instance != null)
+            GameManager.Instance.GoToScene(SceneManager.GetActiveScene().name);
+        else
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void GoToMainMenu() {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(mainMenuSceneName);
+        if (GameManager.Instance != null)
+            GameManager.Instance.GoToScene(mainMenuSceneName);
+        else
+            SceneManager.LoadScene(mainMenuSceneName);
     }
 
     #endregion

@@ -3,130 +3,105 @@ using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
 public class AdvancedSeekerDrone : Agent {
-    [Header("Cài đặt Di chuyển")]
-    [Tooltip("Tốc độ di chuyển tối đa (m/s)")]
-    public float moveSpeed = 15f;
-    [Tooltip("Tốc độ xoay (độ/giây)")]
-    public float turnSpeed = 250f;
+    [Header("Cài đặt")]
+    public float moveSpeed = 10f;
+    public float turnSpeed = 200f;
     public bool allowBackward = false;
+    public float minimumForwardInput = 0.15f;
+    public float idleSpeedPenalty = -0.002f;
+    public float idleSpeedThreshold = 0.4f;
 
     [Header("Tham chiếu")]
-    public MapManager mapManager;
-    public Animator animator;
-    public GameObject coneObject;
+    public MapManager mapManager; // Kéo object chứa MapManager vào đây
 
     private Rigidbody rb;
-    private float lastWallHitTime = 0f;
-    private float spawnY; // Khóa cứng độ cao bay
-
-    // Lưu lệnh từ não AI (OnActionReceived) để FixedUpdate dùng liên tục
-    private float currentMoveInput = 0f;
-    private float currentTurnInput = 0f;
-
-    // ════════════════════════════════════════════════════════════════
-    #region ML-Agents Lifecycle
 
     public override void Initialize() {
         rb = GetComponent<Rigidbody>();
-
         if (mapManager == null) {
             mapManager = FindFirstObjectByType<MapManager>();
         }
 
-        MaxStep = 0;
-
-        // === CẤU HÌNH RIGIDBODY CHUẨN CHO DRONE BAY ===
-        rb.useGravity = false;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        // Khóa xoay X/Z để không bị lật, KHÔNG khóa Y position trong constraints
-        // vì ta sẽ khóa Y thủ công trong FixedUpdate (chính xác hơn)
-        rb.constraints = RigidbodyConstraints.FreezeRotationX
-                       | RigidbodyConstraints.FreezeRotationZ;
-        // Giảm Drag để AddForce không bị triệt tiêu
-        rb.linearDamping = 0.5f;
-        rb.angularDamping = 0.5f;
-
-        // === TẮT ROOT MOTION — tránh Animator giật Rigidbody ===
-        if (animator != null) {
-            animator.applyRootMotion = false;
-        }
-
-        // Ghi nhớ độ cao spawn ban đầu
-        spawnY = transform.position.y;
-    }
-
-    public override void OnEpisodeBegin() {
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-        currentMoveInput = 0f;
-        currentTurnInput = 0f;
-
-        // Khi đang trong Intro cutscene: KHÔNG reset vị trí drone
-        // (để drone giữ nguyên vị trí trong scene mà đạo diễn đã xếp)
-        if (IslandGameManager.Instance != null && !IslandGameManager.Instance.IsPlaying) {
-            spawnY = transform.position.y;
+        if (rb == null) {
+            Debug.LogError("AdvancedSeekerDrone requires a Rigidbody component.", this);
+            enabled = false;
             return;
         }
 
-        if (mapManager != null && !mapManager.isResetting) {
-            mapManager.ResetSingleDronePosition(this);
+        if (mapManager == null) {
+            Debug.LogError("AdvancedSeekerDrone requires a MapManager reference.", this);
+            enabled = false;
+            return;
         }
 
-        // Cập nhật lại độ cao khóa sau khi spawn
-        spawnY = transform.position.y;
+        if (MaxStep <= 0) {
+            MaxStep = 1500;
+        }
+
+        // Chỉ khóa xoay X và Z để không bị lật ngửa, cho phép rơi tự do theo trục Y
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
 
+    public override void OnEpisodeBegin() {
+        // Khi Drone bị timeout (hết MaxStep), ML-Agents sẽ gọi hàm này.
+        // Báo MapManager reset lại toàn bộ map.
+        //mapManager.ResetMap(); // Đã bật lại để Reset hoạt động
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+    }
+
+    // CHO PHÉP ĐIỀU KHIỂN BẰNG BÀN PHÍM ĐỂ TEST TRONG EDITOR
     public override void Heuristic(in ActionBuffers actionsOut) {
         var continuousActionsOut = actionsOut.ContinuousActions;
-        continuousActionsOut[0] = Input.GetAxis("Vertical");
-        continuousActionsOut[1] = Input.GetAxis("Horizontal");
+        continuousActionsOut[0] = Input.GetAxis("Vertical");   // Tiến/Lùi (W/S)
+        continuousActionsOut[1] = Input.GetAxis("Horizontal"); // Xoay trái/phải (A/D)
     }
-    #endregion
-
-    // ════════════════════════════════════════════════════════════════
-    #region Observations (18 giá trị)
 
     public override void CollectObservations(VectorSensor sensor) {
-        if (mapManager == null) return;
-
-        // 1. Vận tốc cục bộ (3 giá trị)
         sensor.AddObservation(transform.InverseTransformDirection(rb.linearVelocity));
 
-        // 2. Heatmap lưới 3x3 (9 giá trị)
+        // TÍNH TOÁN VÀ TRUYỀN 9 THÔNG SỐ HEATMAP (LƯỚI 3x3) CHO AI "NGỬI"
         Vector2Int myCell = mapManager.WorldToGrid(transform.position);
+        int myCellX = myCell.x;
+        int myCellZ = myCell.y;
+
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
-                float cellLastVisitTime = mapManager.GetHeat(myCell.x + x, myCell.y + z);
+                float cellLastVisitTime = mapManager.GetHeat(myCellX + x, myCellZ + z);
                 float timeSinceVisit = Time.time - cellLastVisitTime;
-                sensor.AddObservation(Mathf.Clamp01(timeSinceVisit / 10f));
+
+                // Chuẩn hóa: Càng lâu chưa đến = giá trị càng gần 1 (ngon). Mới đến = 0 (dở)
+                float normalizedHeat = Mathf.Clamp01(timeSinceVisit / 10f);
+                sensor.AddObservation(normalizedHeat);
             }
         }
 
-        // 3. Quan sát mục tiêu (6 giá trị)
-        GameObject targetObj = mapManager.GetNearestActivePlayer(transform.position);
-
+        // Bổ sung 6 quan sát ngữ cảnh mục tiêu để khớp vector size = 18.
+        // 1) Hướng local đến mục tiêu gần nhất (3)
+        // 2) Khoảng cách chuẩn hóa (1)
+        // 3) Độ thẳng hướng nhìn tới mục tiêu (1)
+        // 4) Tỉ lệ tốc độ ngang hiện tại (1)
+        Transform target = mapManager.GetNearestTargetForObservations(transform.position);
         Vector3 toTargetWorld = Vector3.zero;
         float normalizedDistance = 0f;
         float facingDot = 0f;
 
-        if (targetObj != null) {
-            toTargetWorld = targetObj.transform.position - transform.position;
+        if (target != null) {
+            toTargetWorld = target.position - transform.position;
             toTargetWorld.y = 0f;
 
             float distance = toTargetWorld.magnitude;
-            float maxMapDimension = Mathf.Max(mapManager.mapSize.x, mapManager.mapSize.y);
-            normalizedDistance = Mathf.Clamp01(distance / Mathf.Max(1f, maxMapDimension));
+            normalizedDistance = Mathf.Clamp01(distance / Mathf.Max(1f, mapManager.mapSize));
 
             if (distance > 0.001f) {
-                facingDot = Vector3.Dot(transform.forward, toTargetWorld.normalized);
+                Vector3 targetDir = toTargetWorld / distance;
+                facingDot = Vector3.Dot(transform.forward, targetDir);
             }
         }
 
         Vector3 localTargetDir = transform.InverseTransformDirection(toTargetWorld);
-        if (localTargetDir.sqrMagnitude > 0.001f) {
+        if (localTargetDir.sqrMagnitude > 0.0001f) {
             localTargetDir.Normalize();
         }
 
@@ -134,142 +109,58 @@ public class AdvancedSeekerDrone : Agent {
             new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).magnitude / Mathf.Max(0.01f, moveSpeed)
         );
 
-        sensor.AddObservation(localTargetDir);        // 3 giá trị
-        sensor.AddObservation(normalizedDistance);     // 1 giá trị
-        sensor.AddObservation(facingDot);              // 1 giá trị
-        sensor.AddObservation(horizontalSpeedRatio);   // 1 giá trị
+        sensor.AddObservation(localTargetDir);
+        sensor.AddObservation(normalizedDistance);
+        sensor.AddObservation(facingDot);
+        sensor.AddObservation(horizontalSpeedRatio);
     }
-    #endregion
-
-    // ════════════════════════════════════════════════════════════════
-    #region Actions & Physics
 
     public override void OnActionReceived(ActionBuffers actions) {
         if (mapManager == null || rb == null) return;
 
-        // ═══ ĐÓNG BĂNG KHI ĐANG CUTSCENE INTRO ═══
-        if (IslandGameManager.Instance != null && !IslandGameManager.Instance.IsPlaying) {
-            currentMoveInput = 0f;
-            currentTurnInput = 0f;
-            return;
-        }
-
-        // Lưu lệnh từ não AI — FixedUpdate sẽ thực thi liên tục
-        currentMoveInput = actions.ContinuousActions[0];
-        currentTurnInput = actions.ContinuousActions[1];
+        float moveForward = actions.ContinuousActions[0];
+        float turnDirection = actions.ContinuousActions[1];
 
         if (!allowBackward) {
-            currentMoveInput = (currentMoveInput + 1f) * 0.5f; // Map [-1,1] → [0,1]
+            // Chuyển dải [-1, 1] thành [0, 1] để bot ưu tiên tiến về trước.
+            moveForward = Mathf.Clamp01((moveForward + 1f) * 0.5f);
+            if (moveForward > 0f && moveForward < minimumForwardInput) {
+                moveForward = minimumForwardInput;
+            }
+        }
+        else {
+            if (Mathf.Abs(moveForward) > 0f && Mathf.Abs(moveForward) < minimumForwardInput) {
+                moveForward = Mathf.Sign(moveForward) * minimumForwardInput;
+            }
         }
 
-        // Xử lý phần thưởng (chỉ gọi mỗi Decision, không cần mỗi FixedUpdate)
+        Vector3 moveDir = transform.forward * moveForward * moveSpeed;
+        rb.linearVelocity = new Vector3(moveDir.x, rb.linearVelocity.y, moveDir.z); // Giữ nguyên Y để rớt vật lý tự nhiên
+        transform.Rotate(Vector3.up, turnDirection * turnSpeed * Time.fixedDeltaTime);
+
+        // NHỜ MANAGER CHECK HEATMAP
         mapManager.ProcessHeatmapReward(this);
 
-        // --- REWARD SHAPING ---
-        GameObject targetObj = mapManager.GetNearestActivePlayer(transform.position);
-        if (targetObj != null) {
-            Vector3 toTarget = targetObj.transform.position - transform.position;
-            toTarget.y = 0f;
+        if (MaxStep > 0) {
+            AddReward(-1f / MaxStep);
+        }
 
-            if (toTarget.sqrMagnitude > 1f) {
-                Vector3 dirToTarget = toTarget.normalized;
-                float lookDot = Vector3.Dot(transform.forward, dirToTarget);
-
-                // Thưởng nhẹ nếu quay mặt về hướng mục tiêu
-                if (lookDot > 0.7f) {
-                    AddReward(0.001f);
-                }
-
-                // Thưởng đậm hơn nếu đang thực sự di chuyển về hướng đó
-                Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-                if (flatVel.magnitude > 1f) {
-                    float moveDot = Vector3.Dot(flatVel.normalized, dirToTarget);
-                    if (moveDot > 0.8f) {
-                        AddReward(0.002f);
-                    }
-                }
-            }
+        if (new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).magnitude < idleSpeedThreshold) {
+            AddReward(idleSpeedPenalty);
         }
     }
-
-    private void FixedUpdate() {
-        if (rb == null) return;
-
-        // ═══ ĐÓNG BĂNG KHI ĐANG CUTSCENE INTRO ═══
-        if (IslandGameManager.Instance != null && !IslandGameManager.Instance.IsPlaying) {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            return;
-        }
-
-        // ═══ XOAY — liên tục mỗi physics frame ═══
-        transform.Rotate(Vector3.up, currentTurnInput * turnSpeed * Time.fixedDeltaTime);
-
-        // ═══ DI CHUYỂN — Sử dụng Lực kéo (AddForce) thay vì ghi đè Velocity ═══
-        // Tại sao? Ghi đè Velocity làm AI đâm vào chướng ngại vật vẫn tưởng mình đang đi với 15m/s
-        Vector3 targetVelocity = transform.forward * currentMoveInput * moveSpeed;
-        Vector3 currentFlatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-
-        // Tính lực cần thiết để đạt tới targetVelocity 
-        Vector3 velocityChange = targetVelocity - currentFlatVel;
-
-        // Đẩy 1 lực gia tốc Acceleration gấp 10 lần để nó vọt đi nhanh nhưng vẫn bị cản bởi tường
-        rb.AddForce(velocityChange * 10f, ForceMode.Acceleration);
-
-        // ═══ KHÓA ĐỘ CAO Y — chống trôi lên/xuống ═══
-        Vector3 pos = rb.position;
-        pos.y = spawnY;
-        rb.position = pos;
-        if (Mathf.Abs(rb.linearVelocity.y) > 0.01f) {
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-        }
-
-        // ═══ ANIMATOR ═══
-        if (animator != null) {
-            if (HasParameter(animator, "Speed")) {
-                float flatSpeed = currentFlatVel.magnitude;
-                animator.SetFloat("Speed", flatSpeed);
-            }
-        }
-    }
-    private bool HasParameter(Animator anim, string paramName) {
-        foreach (AnimatorControllerParameter param in anim.parameters) {
-            if (param.name == paramName) return true;
-        }
-        return false;
-    }
-    #endregion
-
-    // ════════════════════════════════════════════════════════════════
-    #region Collision & Trigger
 
     private void OnTriggerEnter(Collider other) {
         if (other.CompareTag("Player")) {
+            // BÁO CÁO MANAGER ĐÃ BẮT ĐƯỢC
             mapManager.OnPlayerCaught(other.gameObject, this);
         }
     }
 
-    private void OnCollisionEnter(Collision collision) {
-        if (collision.gameObject.CompareTag("Wall") || collision.gameObject.CompareTag("Obstacle")) {
-            if (Time.time - lastWallHitTime > 1.0f) {
-                AddReward(-0.01f);
-                lastWallHitTime = Time.time;
-            }
-        }
-    }
-
+    // XỬ LÝ ĐÂM TƯỜNG (PHẠT NHẸ, KHÔNG END EPISODE ĐỂ KHÔNG HỎNG MULTI-AGENT)
     private void OnCollisionStay(Collision collision) {
         if (collision.gameObject.CompareTag("Wall") || collision.gameObject.CompareTag("Obstacle")) {
-            // Phạt liên tục nếu cố tình cọ xát/mài mặt vào tường (1 giây phạt 1 lần)
-            if (Time.time - lastWallHitTime > 1.0f) {
-                AddReward(-0.01f);
-                lastWallHitTime = Time.time;
-            }
+            AddReward(-0.01f); // Trừ điểm liên tục nếu cứ cạ vào tường
         }
-    }
-    #endregion
-    public void ActiveAll() {
-        if (coneObject != null && coneObject.activeSelf == false)
-            coneObject.SetActive(true);
     }
 }

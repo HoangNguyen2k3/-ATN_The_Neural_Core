@@ -12,6 +12,9 @@ public class PlayerCombatAnalyzer : MonoBehaviour {
     [Range(0f, 1f)] public float agilityScore;       // Độ nhanh nhẹn (hay dodge/đổi hướng?)
     [Range(0f, 1f)] public float preferredRange;     // Khoảng cách ưa thích (xa=1, gần=0)
 
+    [Tooltip("Bật = DummyBot đang gán thẳng scores. CalculateScores() sẽ bị bỏ qua.")]
+    public bool isExternalControl = false;  // Set true bởi DummyPlayerBot trong training
+
     // ─── Cấu hình ───────────────────────────────────────────────
     [Header("⚙️ Cấu hình")]
     [Tooltip("Thời gian cửa sổ trượt (giây). Mặc định 5s = phân tích 5 giây gần nhất")]
@@ -93,7 +96,7 @@ public class PlayerCombatAnalyzer : MonoBehaviour {
         // ═══ CẬP NHẬT CỬA SỔ TRƯỢT ═══
         _windowTimer -= Time.deltaTime;
         if (_windowTimer <= 0f) {
-            CalculateScores();
+            if (!isExternalControl) CalculateScores(); // Skip nếu DummyBot đang control
             ResetWindow();
         }
     }

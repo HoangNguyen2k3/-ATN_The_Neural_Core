@@ -189,16 +189,8 @@ public class AdaptiveBossAgent : Agent {
         // ═══ DISCRETE: Chọn Skill ═══
         int skillChoice = actions.DiscreteActions[0];
         if (skillExecutor != null && skillChoice > 0) {
-            bool executed = skillExecutor.ExecuteSkill(skillChoice);
-
-            if (executed) {
-                // Thưởng nếu skill dính, phạt nếu miss
-                if (skillExecutor.LastSkillHit) {
-                    AddReward(0.5f);
-                } else {
-                    AddReward(-0.1f);
-                }
-            }
+            // Thực thi skill. Phần thưởng sát thương được tính qua sự kiện OnPlayerDamaged trong BossArenaManager
+            skillExecutor.ExecuteSkill(skillChoice);
         }
 
         // ═══ Time Penalty ═══

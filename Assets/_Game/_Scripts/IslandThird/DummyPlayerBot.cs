@@ -29,10 +29,12 @@ public class DummyPlayerBot : MonoBehaviour {
     public float preferredDistanceDodger = 8f;
 
     [Header("⚔️ Chiến đấu")]
-    public float attackDamage = 5f;
-    public float attackRange = 18f;
-    public float attackCooldown = 0.5f;
-    public float moveSpeed = 6f;
+    public float baseMoveSpeed = 6f;
+
+    // Chỉ số động tuỳ Style
+    private float _currentAttackDamage;
+    private float _currentAttackRange;
+    private float _currentAttackCooldown;
 
     // ─── Runtime ────────────────────────────────────────────────
     private BotStyle _activeStyle;
@@ -69,21 +71,33 @@ public class DummyPlayerBot : MonoBehaviour {
 
         // Fake PlayerCombatAnalyzer cho Boss đọc đúng thói quen
         if (combatAnalyzer != null) {
+            // Lock để PlayerCombatAnalyzer.CalculateScores() không ghi đè
+            combatAnalyzer.isExternalControl = true;
+
             switch (_activeStyle) {
                 case BotStyle.Rambo:
                     combatAnalyzer.aggressionScore = Random.Range(0.8f, 1.0f);
-                    combatAnalyzer.agilityScore = Random.Range(0.1f, 0.3f);
-                    combatAnalyzer.preferredRange = Random.Range(0.1f, 0.25f);
+                    combatAnalyzer.agilityScore    = Random.Range(0.1f, 0.3f);
+                    combatAnalyzer.preferredRange  = Random.Range(0.1f, 0.25f);
+                    _currentAttackDamage = 1.5f;
+                    _currentAttackCooldown = 0.5f;
+                    _currentAttackRange = 5f;
                     break;
                 case BotStyle.Sniper:
                     combatAnalyzer.aggressionScore = Random.Range(0.3f, 0.5f);
-                    combatAnalyzer.agilityScore = Random.Range(0.1f, 0.2f);
-                    combatAnalyzer.preferredRange = Random.Range(0.7f, 0.95f);
+                    combatAnalyzer.agilityScore    = Random.Range(0.1f, 0.2f);
+                    combatAnalyzer.preferredRange  = Random.Range(0.7f, 0.95f);
+                    _currentAttackDamage = 8f;
+                    _currentAttackCooldown = 2.0f;
+                    _currentAttackRange = 25f;
                     break;
                 case BotStyle.Dodger:
                     combatAnalyzer.aggressionScore = Random.Range(0.2f, 0.4f);
-                    combatAnalyzer.agilityScore = Random.Range(0.7f, 0.95f);
-                    combatAnalyzer.preferredRange = Random.Range(0.3f, 0.6f);
+                    combatAnalyzer.agilityScore    = Random.Range(0.7f, 0.95f);
+                    combatAnalyzer.preferredRange  = Random.Range(0.3f, 0.6f);
+                    _currentAttackDamage = 3f;
+                    _currentAttackCooldown = 1.2f;
+                    _currentAttackRange = 15f;
                     break;
             }
         }
@@ -121,9 +135,9 @@ public class DummyPlayerBot : MonoBehaviour {
         }
 
         // Tấn công liên tục khi đủ gần
-        if (dist < attackRange && _attackTimer <= 0f) {
+        if (dist < _currentAttackRange && _attackTimer <= 0f) {
             Attack();
-            _attackTimer = attackCooldown * 0.5f; // Rambo bắn nhanh gấp đôi
+            _attackTimer = _currentAttackCooldown;
         }
 
         // Cập nhật fake analyzer (real-time thay đổi nhẹ để tự nhiên hơn)
@@ -147,9 +161,9 @@ public class DummyPlayerBot : MonoBehaviour {
         }
 
         // Bắn khi nằm trong vùng ưa thích
-        if (dist >= preferredDistanceSniper - 3f && dist <= attackRange && _attackTimer <= 0f) {
+        if (dist >= preferredDistanceSniper - 3f && dist <= _currentAttackRange && _attackTimer <= 0f) {
             Attack();
-            _attackTimer = attackCooldown;
+            _attackTimer = _currentAttackCooldown;
         }
 
         // Fake analyzer
@@ -187,9 +201,9 @@ public class DummyPlayerBot : MonoBehaviour {
         MoveTowards(moveDir);
 
         // Hit-and-run: bắn rồi chạy
-        if (dist < attackRange && _attackTimer <= 0f) {
+        if (dist < _currentAttackRange && _attackTimer <= 0f) {
             Attack();
-            _attackTimer = attackCooldown * 1.5f; // Dodger bắn chậm hơn
+            _attackTimer = _currentAttackCooldown;
         }
 
         // Fake analyzer
@@ -206,7 +220,7 @@ public class DummyPlayerBot : MonoBehaviour {
 
     void MoveTowards(Vector3 direction) {
         direction.y = 0f;
-        transform.position += direction.normalized * moveSpeed * Time.deltaTime;
+        transform.position += direction.normalized * baseMoveSpeed * Time.deltaTime;
 
         // Quay mặt về hướng Boss
         if (bossTransform != null) {
@@ -225,9 +239,18 @@ public class DummyPlayerBot : MonoBehaviour {
     void Attack() {
         if (bossHealth != null && !bossHealth.IsDead) {
             float dist = Vector3.Distance(transform.position, bossTransform.position);
-            if (dist <= attackRange) {
-                bossHealth.TakeDamage(attackDamage);
-                combatAnalyzer?.RegisterAttack();
+            if (dist <= _currentAttackRange) {
+                // Check Line of Sight (không bị cản bởi tường)
+                Vector3 origin = transform.position + Vector3.up * 1f;
+                Vector3 targetPos = bossTransform.position + Vector3.up * 1f;
+                Vector3 dir = targetPos - origin;
+                
+                if (Physics.Raycast(origin, dir.normalized, out RaycastHit hit, _currentAttackRange)) {
+                    if (hit.collider.transform == bossTransform || hit.collider.transform.IsChildOf(bossTransform)) {
+                        bossHealth.TakeDamage(_currentAttackDamage);
+                        combatAnalyzer?.RegisterAttack();
+                    }
+                }
             }
         }
     }

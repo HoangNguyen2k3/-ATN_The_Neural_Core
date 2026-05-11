@@ -26,7 +26,7 @@ public class BossArenaManager : MonoBehaviour {
     public bool isTrainingMode = true;
 
     [Header("🔗 Scene Settings")]
-    public string mainMenuSceneName = "Island3";
+    public string mainMenuSceneName = "Island3_MenuBoard";
 
     // ─── AI Model Injection (Gameplay) ──────────────────────────
     [Header("🧠 AI Models (Chỉ dùng khi Gameplay)")]

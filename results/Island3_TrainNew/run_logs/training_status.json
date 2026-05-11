@@ -1,0 +1,65 @@
+{
+    "AdaptiveBoss": {
+        "checkpoints": [
+            {
+                "steps": 499985,
+                "file_path": "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-499985.onnx",
+                "reward": 4.6118182702498,
+                "creation_time": 1778439781.091911,
+                "auxillary_file_paths": [
+                    "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-499985.pt"
+                ]
+            },
+            {
+                "steps": 999938,
+                "file_path": "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-999938.onnx",
+                "reward": 1.3771429061889648,
+                "creation_time": 1778447637.4790251,
+                "auxillary_file_paths": [
+                    "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-999938.pt"
+                ]
+            },
+            {
+                "steps": 1499925,
+                "file_path": "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-1499925.onnx",
+                "reward": 6.125890463998873,
+                "creation_time": 1778455445.0472546,
+                "auxillary_file_paths": [
+                    "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-1499925.pt"
+                ]
+            },
+            {
+                "steps": 1999895,
+                "file_path": "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-1999895.onnx",
+                "reward": 7.140000025431315,
+                "creation_time": 1778463356.1875784,
+                "auxillary_file_paths": [
+                    "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-1999895.pt"
+                ]
+            },
+            {
+                "steps": 2002950,
+                "file_path": "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-2002950.onnx",
+                "reward": 6.40120005607605,
+                "creation_time": 1778463432.927655,
+                "auxillary_file_paths": [
+                    "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-2002950.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 2002950,
+            "file_path": "results\\Island3_TrainNew\\AdaptiveBoss.onnx",
+            "reward": 6.40120005607605,
+            "creation_time": 1778463432.927655,
+            "auxillary_file_paths": [
+                "results\\Island3_TrainNew\\AdaptiveBoss\\AdaptiveBoss-2002950.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2+cpu"
+    }
+}

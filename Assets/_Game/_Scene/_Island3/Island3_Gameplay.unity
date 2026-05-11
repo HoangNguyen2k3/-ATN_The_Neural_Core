@@ -1878,6 +1878,7 @@ MonoBehaviour:
   aggressionScore: 0
   agilityScore: 0
   preferredRange: 0
+  isExternalControl: 0
   windowDuration: 5
   arenaRadius: 20
   bossTransform: {fileID: 1905686369}
@@ -8094,16 +8095,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   matchTimeLimit: 300
   isTrainingMode: 0
-  mainMenuSceneName: Island3
+  mainMenuSceneName: Island3_MenuBoard
   difficultyModels:
   - difficulty: 0
-    model: {fileID: 5022602860645237092, guid: ed4846280e43885428ef3d4254be1730, type: 3}
-  - difficulty: 0
-    model: {fileID: 5022602860645237092, guid: ed4846280e43885428ef3d4254be1730, type: 3}
+    model: {fileID: 5022602860645237092, guid: bcc8a1b4a78d8de4bb18d0241fe38a72, type: 3}
+  - difficulty: 1
+    model: {fileID: 5022602860645237092, guid: 1b4647c41b1c47046a823f2b71826930, type: 3}
   - difficulty: 2
-    model: {fileID: 5022602860645237092, guid: ed4846280e43885428ef3d4254be1730, type: 3}
-  - difficulty: 3
-    model: {fileID: 5022602860645237092, guid: ed4846280e43885428ef3d4254be1730, type: 3}
+    model: {fileID: 5022602860645237092, guid: f394cbba63857f2419ead069cb54c5be, type: 3}
   bossHealth: {fileID: 1905686361}
   playerHealth: {fileID: 382424731}
   bossAgent: {fileID: 1905686360}

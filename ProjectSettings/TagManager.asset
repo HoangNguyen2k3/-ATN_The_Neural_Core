@@ -9,6 +9,7 @@ TagManager:
   - Wall
   - Obstacle
   - HumanPlayer
+  - CinemachineTarget
   layers:
   - Default
   - TransparentFX
@@ -20,7 +21,7 @@ TagManager:
   - 
   - Boss
   - PlayerIsland3
-  - 
+  - Drone
   - 
   - 
   - 

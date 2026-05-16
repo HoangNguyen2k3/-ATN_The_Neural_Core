@@ -54,6 +54,7 @@ public class NPCQuestGiver : MonoBehaviour {
         // MỞ KHÓA VÀ HIỆN CON TRỎ CHUỘT (Dành cho PC)
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
 
         // Lấy kịch bản từ GameManager
         currentDialogueLines = GameManager.Instance.gameDataConfig.npcDialogueDB.allStages[currentGameStage].dialogueLines;

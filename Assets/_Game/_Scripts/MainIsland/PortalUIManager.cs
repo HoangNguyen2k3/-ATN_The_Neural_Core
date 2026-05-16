@@ -37,6 +37,7 @@ public class PortalUIManager : MonoBehaviour {
         // Mở khoá chuột để người chơi có thể bấm nút (nếu game 3D của bạn đang khoá chuột)
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
     }
 
     private void SetupDialogData() {

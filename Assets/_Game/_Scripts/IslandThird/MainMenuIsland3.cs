@@ -12,6 +12,7 @@ public class MainMenuIsland3 : MonoBehaviour {
         selectedDifficulty = GameDifficulty.Easy;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
     }
     public void SetDifficulty(int difficultyIndex) {
         selectedDifficulty = (GameDifficulty)difficultyIndex;

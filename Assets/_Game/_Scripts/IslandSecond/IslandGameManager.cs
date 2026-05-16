@@ -144,8 +144,9 @@ public class IslandGameManager : MonoBehaviour {
 
         Debug.Log("[IslandGameManager] Human Player bị bắt — Game Over");
         Time.timeScale = 0f;
-        // Ẩn con trỏ chuột
         Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
         hudPanel?.SetActive(false);
         losePanel?.SetActive(true);
     }
@@ -169,6 +170,8 @@ public class IslandGameManager : MonoBehaviour {
         Debug.Log("[IslandGameManager] Thoát thành công — Chiến thắng!");
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
         hudPanel?.SetActive(false);
         winPanel?.SetActive(true);
     }

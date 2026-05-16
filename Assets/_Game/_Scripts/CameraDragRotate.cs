@@ -78,8 +78,19 @@ public class CameraDragRotate : MonoBehaviour {
 
     void LateUpdate() {
         if (target == null) return;
-        HandleInput();
+        // Chỉ xoay khi cursor đang bị lock — ngăn camera kẹt edge khi UI mở
+        if (Cursor.lockState == CursorLockMode.Locked) {
+            HandleInput();
+        }
         UpdateCameraPosition();
+    }
+
+    // Tự re-lock khi cửa sổ game lấy lại focus (Alt-Tab, click window khác)
+    // Chỉ re-lock nếu cursor đang ẩn (tức là không phải dialog UI đang mở)
+    void OnApplicationFocus(bool hasFocus) {
+        if (hasFocus && !Cursor.visible) {
+            Cursor.lockState = CursorLockMode.Locked;
+        }
     }
 
     void HandleInput() {

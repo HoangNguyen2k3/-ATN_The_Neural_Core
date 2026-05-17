@@ -16,7 +16,10 @@ public class AdvancedSeekerDrone : Agent {
     public MapManager mapManager; // Kéo object chứa MapManager vào đây
 
     private Rigidbody rb;
-
+    public GameObject cone;
+    public void ActiveAll() {
+        cone.SetActive(true);
+    }
     public override void Initialize() {
         rb = GetComponent<Rigidbody>();
         if (mapManager == null) {

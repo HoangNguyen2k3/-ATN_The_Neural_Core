@@ -142,6 +142,7 @@ public class IslandGameManager : MonoBehaviour {
         if (_state != GameState.Playing) return;
         _state = GameState.Lost;
 
+        AudioManager.Instance?.PlayDefeat();
         Debug.Log("[IslandGameManager] Human Player bị bắt — Game Over");
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
@@ -168,6 +169,7 @@ public class IslandGameManager : MonoBehaviour {
             DataManager.Ins.AddStoneProgress(2, GameManager.Instance.DifficultyCountIsland2);
 
         Debug.Log("[IslandGameManager] Thoát thành công — Chiến thắng!");
+        AudioManager.Instance?.PlayVictory();
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;

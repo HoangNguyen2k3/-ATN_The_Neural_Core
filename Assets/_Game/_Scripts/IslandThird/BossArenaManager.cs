@@ -274,6 +274,7 @@ public class BossArenaManager : MonoBehaviour {
             if (DataManager.Ins != null && DataManager.Ins.isLoaded && GameManager.Instance != null)
                 DataManager.Ins.AddStoneProgress(3, GameManager.Instance.DifficultyCountIsland3);
 
+            AudioManager.Instance?.PlayVictory();
             StartCoroutine(ShowWinScreenDelay());
         }
     }
@@ -323,6 +324,7 @@ public class BossArenaManager : MonoBehaviour {
         }
 
         if (!isTrainingMode) {
+            AudioManager.Instance?.PlayDefeat();
             Time.timeScale = 0f;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;

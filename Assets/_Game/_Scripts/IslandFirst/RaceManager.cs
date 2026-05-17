@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Cinemachine;
@@ -231,6 +231,10 @@ namespace Aircraft {
                     if (playerPlace <= 2) {
                         int stoneIndex = GameManager.Instance.numberLevel; // 0=Snow, 1=Desert
                         DataManager.Ins.AddStoneProgress(stoneIndex, GameManager.Instance.DifficultyCountIsland1);
+                        AudioManager.Instance?.PlayVictory();
+                    }
+                    else {
+                        AudioManager.Instance?.PlayDefeat();
                     }
                 }
             }

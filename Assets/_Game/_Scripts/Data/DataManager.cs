@@ -9,9 +9,8 @@ public class DataManager : MonoBehaviour {
     public GameSave gameSave;
     GameSave gameSave_BackUp;
     private void OnApplicationPause(bool pause) {
-        if (!pause && isLoaded && gameSave != null) {
-        }
-        SaveData();
+        if (pause && isLoaded && gameSave != null)
+            SaveData();
     }
     private void OnApplicationQuit() { SaveData(); }
     public void Init() {

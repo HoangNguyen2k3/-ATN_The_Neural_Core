@@ -20,21 +20,23 @@ namespace Aircraft {
         /// </summary>
         /// <param name="actionsOut">An array of floats for agentAction to use</param>
         public override void Heuristic(in ActionBuffers actionsOut) {
-            //Pitch: 1==up, 0==none,-1==down
-            float pitchValue = Mathf.Round(pitchInput.ReadValue<float>());
-            //Yaw: 1==turn right,0==none,-1==turn left
-            float yawValue = Mathf.Round(yawInput.ReadValue<float>());
-            //Boost: 1==boost,0==no boost
-            float boostValue = Mathf.Round((boostInput.ReadValue<float>()));
+            // Mobile bridge override (nút màn hình) có ưu tiên cao hơn InputAction
+            float pitchValue = MobileInputBridge.AircraftPitch != 0f
+                ? MobileInputBridge.AircraftPitch
+                : Mathf.Round(pitchInput.ReadValue<float>());
+            float yawValue = MobileInputBridge.AircraftYaw != 0f
+                ? MobileInputBridge.AircraftYaw
+                : Mathf.Round(yawInput.ReadValue<float>());
+            float boostValue = MobileInputBridge.AircraftBoost
+                ? 1f
+                : Mathf.Round(boostInput.ReadValue<float>());
 
-            //convert
             if (pitchValue == -1f) pitchValue = 2f;
             if (yawValue == -1f) yawValue = 2f;
             var continuous = actionsOut.DiscreteActions;
             continuous[0] = (int)pitchValue;
             continuous[1] = (int)yawValue;
             continuous[2] = (int)boostValue;
-
         }
         public void OnDestroy() {
             pitchInput.Disable();

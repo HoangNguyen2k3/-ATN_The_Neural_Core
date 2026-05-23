@@ -33,6 +33,7 @@ namespace Aircraft {
         public int DifficultyCountIsland3 { get; set; } = 3;
         [Header("=============Data Game======================")]
         public GameDataConfig gameDataConfig;
+        public bool bool_isMobile = false;
         private void Awake() {
             if (Instance == null) {
                 Instance = this;

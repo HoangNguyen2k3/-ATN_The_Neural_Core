@@ -46,10 +46,10 @@ public class SpeedBuffPickup : MonoBehaviour
     private bool _isAvailable = true;
     private Vector3 _startPos;
 
-    // Buff đang active trên player
-    private static HumanPlayerController _buffedPlayer;
-    private static Coroutine             _activeBuff;
-    private static SpeedBuffPickup       _activeSource;  // Script nào đang hold buff
+    // Buff đang active trên player (instance fields, không static)
+    private HumanPlayerController _buffedPlayer;
+    private Coroutine             _activeBuff;
+    private static SpeedBuffPickup _activePickup; // chỉ track instance đang active
 
     // ════════════════════════════════════════════════════════════════
     private void Start()
@@ -100,11 +100,8 @@ public class SpeedBuffPickup : MonoBehaviour
         SetVisual(false);
 
         // Nếu đang có buff khác → hủy cũ, apply mới (reset timer)
-        if (_activeBuff != null && _activeSource != null)
-        {
-            _activeSource.StopCoroutine(_activeBuff);
-            RemoveBuff(_buffedPlayer);
-        }
+        if (_activePickup != null && _activePickup != this)
+            _activePickup.CancelBuff();
 
         // Hiệu ứng nhặt
         if (pickupVFX != null)
@@ -115,7 +112,7 @@ public class SpeedBuffPickup : MonoBehaviour
 
         // Apply buff
         _buffedPlayer = player;
-        _activeSource = this;
+        _activePickup = this;
         _activeBuff   = StartCoroutine(BuffRoutine(player));
 
         // Respawn sau delay
@@ -144,23 +141,32 @@ public class SpeedBuffPickup : MonoBehaviour
         }
 
         // Remove
-        RemoveBuff(player);
+        RemoveBuff();
 
         // Ẩn HUD icon
         if (hudBuffIcon != null)
             hudBuffIcon.fillAmount = 0f;
 
-        _activeBuff  = null;
-        _activeSource = null;
+        _activeBuff   = null;
+        _activePickup = null;
         _buffedPlayer = null;
     }
 
-    private static void RemoveBuff(HumanPlayerController player)
+    public void CancelBuff()
     {
-        if (player == null) return;
-        // Tính lại tốc độ gốc
-        player.walkSpeed   /= _activeSource != null ? _activeSource.speedMultiplier : 2f;
-        player.sprintSpeed /= _activeSource != null ? _activeSource.speedMultiplier : 2f;
+        if (_activeBuff != null) StopCoroutine(_activeBuff);
+        RemoveBuff();
+        if (hudBuffIcon != null) hudBuffIcon.fillAmount = 0f;
+        _activeBuff = null;
+        if (_activePickup == this) _activePickup = null;
+        _buffedPlayer = null;
+    }
+
+    private void RemoveBuff()
+    {
+        if (_buffedPlayer == null) return;
+        _buffedPlayer.walkSpeed   /= speedMultiplier;
+        _buffedPlayer.sprintSpeed /= speedMultiplier;
         Debug.Log("[SpeedBuff] Buff hết hạn — trở về tốc độ bình thường.");
     }
 

@@ -31,42 +31,31 @@ public class ThirdPersonController : MonoBehaviour {
             velocity.y = -2f; // Giữ nhân vật dính xuống đất khi đi dốc
         }
 
-        // Cập nhật Animator: Báo trạng thái chạm đất
-        animator.SetBool("IsGrounded", isGrounded);
+        if (animator != null) animator.SetBool("IsGrounded", isGrounded);
 
-        // 2. NHẬN INPUT TỪ BÀN PHÍM (PC)
-        float horizontal = Input.GetAxisRaw("Horizontal"); // Phím A/D hoặc Mũi tên trái/phải
-        float vertical = Input.GetAxisRaw("Vertical");     // Phím W/S hoặc Mũi tên lên/xuống
-        Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
+        // 2. NHẬN INPUT (mobile joystick hoặc keyboard fallback)
+        Vector2 moveInput = MobileInputBridge.HasMoveInput
+            ? MobileInputBridge.MoveInput
+            : new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        Vector3 direction = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
 
         // 3. XỬ LÝ DI CHUYỂN & XOAY
         if (direction.magnitude >= 0.1f) {
-            // Tính góc xoay theo hướng Camera đang nhìn
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
-
-            // Làm mượt góc xoay (để nhân vật không quay ngoắt 180 độ)
             float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
-
-            // Tính hướng di chuyển thực sự sau khi đã xoay
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
             controller.Move(moveDir.normalized * speed * Time.deltaTime);
-
-            // --> ANIMATOR: Báo là ĐANG CHẠY (Dùng Bool IsMoving)
-            animator.SetBool("IsMoving", true);
+            if (animator != null) animator.SetBool("IsMoving", true);
         }
         else {
-            // --> ANIMATOR: Báo là ĐANG ĐỨNG (Dùng Bool IsMoving)
-            animator.SetBool("IsMoving", false);
+            if (animator != null) animator.SetBool("IsMoving", false);
         }
 
-        // 4. XỬ LÝ NHẢY (Phím Space)
-        if (Input.GetButtonDown("Jump") && isGrounded) {
-            // Công thức vật lý: Vận tốc = Căn bậc 2 của (Độ cao * -2 * Trọng lực)
+        // 4. XỬ LÝ NHẢY
+        if ((MobileInputBridge.JumpDown || Input.GetButtonDown("Jump")) && isGrounded) {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-
-            // Kích hoạt Trigger Nhảy
-            animator.SetTrigger("Jump");
+            if (animator != null) animator.SetTrigger("Jump");
         }
 
         // 5. ÁP DỤNG TRỌNG LỰC

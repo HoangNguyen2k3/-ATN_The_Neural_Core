@@ -125,21 +125,21 @@ public class PlayerCombatController : MonoBehaviour {
             return; // Khi dodge, bỏ qua input khác
         }
 
-        // ═══ INPUT: Block (giữ Q) ═══
+        // ═══ INPUT: Block (giữ Shift hoặc Block button) ═══
         HandleBlock();
 
-        // ═══ INPUT: Dodge (Space) ═══
-        if (Input.GetKeyDown(KeyCode.Space) && _dodgeTimer <= 0f) {
+        // ═══ INPUT: Dodge (Space hoặc Dodge button) ═══
+        if ((MobileInputBridge.DodgeDown || Input.GetKeyDown(KeyCode.Space)) && _dodgeTimer <= 0f) {
             StartDodge();
         }
 
-        // ═══ INPUT: Ranged Attack (Chuột Trái) ═══
-        if (Input.GetMouseButtonDown(0) && _rangedTimer <= 0f && !_isBlocking) {
+        // ═══ INPUT: Ranged Attack (Chuột Trái hoặc Ranged button) ═══
+        if ((MobileInputBridge.RangedDown || Input.GetMouseButtonDown(0)) && _rangedTimer <= 0f && !_isBlocking) {
             DoRangedAttack();
         }
 
-        // ═══ INPUT: Melee Attack (Chuột Phải) ═══
-        if (Input.GetMouseButtonDown(1) && _meleeTimer <= 0f && !_isBlocking) {
+        // ═══ INPUT: Melee Attack (Chuột Phải hoặc Melee button) ═══
+        if ((MobileInputBridge.MeleeDown || Input.GetMouseButtonDown(1)) && _meleeTimer <= 0f && !_isBlocking) {
             DoMeleeAttack();
         }
     }
@@ -294,9 +294,12 @@ public class PlayerCombatController : MonoBehaviour {
         _isDodging = true;
         _dodgeTraveled = 0f;
 
-        // Hướng dodge = hướng WASD input, nếu không nhấn gì thì dodge ra sau
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
+        // Hướng dodge = hướng input (joystick hoặc WASD), nếu không nhấn gì thì dodge ra sau
+        Vector2 moveInput = MobileInputBridge.HasMoveInput
+            ? MobileInputBridge.MoveInput
+            : new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        float h = moveInput.x;
+        float v = moveInput.y;
 
         if (Mathf.Abs(h) > 0.1f || Mathf.Abs(v) > 0.1f) {
             // Chuyển hướng input sang world space (tương đối với camera)
@@ -317,8 +320,7 @@ public class PlayerCombatController : MonoBehaviour {
         // Bật invincibility
         if (_myHealth != null) {
             _myHealth.invincibilityDuration = dodgeInvincibilityDuration;
-            // Force trigger invincibility bằng cách gây 0 damage
-            // (trick: set lastDamageTime = now thông qua TakeDamage(0))
+            _myHealth.TriggerInvincibility();
         }
 
         // Animation
@@ -378,7 +380,7 @@ public class PlayerCombatController : MonoBehaviour {
     #region Block
 
     void HandleBlock() {
-        if (Input.GetKey(KeyCode.LeftShift)) {
+        if (MobileInputBridge.BlockHeld || Input.GetKey(KeyCode.LeftShift)) {
             if (!_isBlocking) {
                 _isBlocking = true;
                 if (_myHealth != null) _myHealth.damageReduction = blockDamageReduction;

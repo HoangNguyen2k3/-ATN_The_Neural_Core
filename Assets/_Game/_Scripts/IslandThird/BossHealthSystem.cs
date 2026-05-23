@@ -52,6 +52,10 @@ public class BossHealthSystem : MonoBehaviour {
         damageReduction = 0f;
     }
 
+    public void TriggerInvincibility() {
+        _lastDamageTime = Time.time;
+    }
+
     public float TakeDamage(float rawDamage) {
         if (_isDead) return 0f;
         if (IsInvincible) return 0f;

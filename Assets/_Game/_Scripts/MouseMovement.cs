@@ -28,9 +28,12 @@ public class MouseMovement : MonoBehaviour {
     void LateUpdate() { // Dùng LateUpdate cho Camera để tránh bị giật lag (jitter)
         if (target == null) return;
 
-        // Nhận input vuốt/chuột
-        currentX += Input.GetAxis("Mouse X") * mouseSensitivity;
-        currentY -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+        // Nhận input (RightTouchLook panel hoặc mouse fallback)
+        Vector2 lookDelta = MobileInputBridge.HasCameraInput
+            ? MobileInputBridge.CameraLookDelta
+            : new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+        currentX += lookDelta.x * mouseSensitivity;
+        currentY -= lookDelta.y * mouseSensitivity;
 
         // KHÓA GÓC TRỤC Y: Giải quyết triệt để việc cam chìm xuống đất
         currentY = Mathf.Clamp(currentY, minYAngle, maxYAngle);

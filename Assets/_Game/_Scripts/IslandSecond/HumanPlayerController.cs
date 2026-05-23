@@ -61,12 +61,14 @@ public class HumanPlayerController : MonoBehaviour {
 
         if (animator != null) animator.SetBool("IsGrounded", isGrounded);
 
-        // 2. LẤY INPUT
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-        Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
+        // 2. LẤY INPUT (mobile joystick hoặc keyboard fallback)
+        Vector2 moveInput = MobileInputBridge.HasMoveInput
+            ? MobileInputBridge.MoveInput
+            : new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        Vector3 direction = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
 
-        bool isSprinting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        bool isSprinting = MobileInputBridge.SprintHeld
+            || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
         float currentSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
         // 3. DI CHUYỂN & XOAY THEO CAMERA
@@ -78,19 +80,14 @@ public class HumanPlayerController : MonoBehaviour {
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
             controller.Move(moveDir.normalized * currentSpeed * Time.deltaTime);
 
-            if (animator != null) {
-                animator.SetBool("IsMoving", true);
-                // Truyền vận tốc di chuyển vào Animator để chuyển đổi anim Đi/Chạy
-            }
+            if (animator != null) animator.SetBool("IsMoving", true);
         }
         else {
-            if (animator != null) {
-                animator.SetBool("IsMoving", false);
-            }
+            if (animator != null) animator.SetBool("IsMoving", false);
         }
 
         // 4. NHẢY
-        if (Input.GetButtonDown("Jump") && isGrounded) {
+        if ((MobileInputBridge.JumpDown || Input.GetButtonDown("Jump")) && isGrounded) {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             if (animator != null) animator.SetTrigger("Jump");
         }

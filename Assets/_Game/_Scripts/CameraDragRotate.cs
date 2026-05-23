@@ -94,39 +94,17 @@ public class CameraDragRotate : MonoBehaviour {
     }
 
     void HandleInput() {
-        float inputX = 0f;
-        float inputY = 0f;
+        float inputX, inputY;
 
-        // ===== TOUCH INPUT (Mobile) — 1 ngón tay vuốt =====
-        if (Input.touchCount == 1) {
-            Touch touch = Input.GetTouch(0);
-            switch (touch.phase) {
-                case TouchPhase.Began:
-                    _lastTouchPos = touch.position;
-                    _isDragging = true;
-                    break;
-                case TouchPhase.Moved:
-                    if (_isDragging) {
-                        Vector2 delta = touch.position - _lastTouchPos;
-                        inputX = delta.x / Screen.width * 180f;
-                        inputY = delta.y / Screen.height * 90f;
-                        _lastTouchPos = touch.position;
-                    }
-                    break;
-                case TouchPhase.Ended:
-                case TouchPhase.Canceled:
-                    _isDragging = false;
-                    break;
-            }
-        }
-        // ===== MOUSE INPUT (PC) — Di chuyển chuột tự do (Free-look) =====
-        else {
-            // Không cần giữ chuột phải nữa, di chuyển chuột là xoay
+        // RightTouchLook panel ghi vào MobileInputBridge → dùng ưu tiên hơn mouse/touch trực tiếp
+        if (MobileInputBridge.HasCameraInput) {
+            inputX = MobileInputBridge.CameraLookDelta.x;
+            inputY = MobileInputBridge.CameraLookDelta.y;
+        } else {
             inputX = Input.GetAxis("Mouse X") * 5f;
             inputY = Input.GetAxis("Mouse Y") * 3f;
         }
 
-        // Áp dụng input
         _currentX += inputX * rotationSpeedX * Time.deltaTime;
         float yDirection = invertY ? 1f : -1f;
         _currentY += inputY * rotationSpeedY * Time.deltaTime * yDirection;

@@ -46,10 +46,11 @@ public class PlayerMovementIsland3 : MonoBehaviour
             return;
         }
 
-        // 3. Nhận Input WASD
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-        Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
+        // 3. Nhận Input (mobile joystick hoặc keyboard fallback)
+        Vector2 moveInput = MobileInputBridge.HasMoveInput
+            ? MobileInputBridge.MoveInput
+            : new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        Vector3 direction = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
 
         // 4. Xử lý di chuyển & xoay theo Camera
         if (direction.magnitude >= 0.1f)

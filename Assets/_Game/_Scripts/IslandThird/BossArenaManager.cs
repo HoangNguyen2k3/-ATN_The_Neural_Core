@@ -193,7 +193,6 @@ public class BossArenaManager : MonoBehaviour {
     }
 
     void OnDestroy() {
-        // Hủy đăng ký events
         if (bossHealth != null) {
             bossHealth.OnDeath -= OnBossDefeated;
             bossHealth.OnDamaged -= OnBossDamaged;
@@ -203,6 +202,7 @@ public class BossArenaManager : MonoBehaviour {
             playerHealth.OnDeath -= OnPlayerDead;
             playerHealth.OnDamaged -= OnPlayerDamaged;
         }
+        if (Instance == this) Instance = null;
     }
 
     #endregion

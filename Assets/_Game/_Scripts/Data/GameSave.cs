@@ -18,11 +18,15 @@ public class GameSave {
     public float hubPosZ;
     public float hubRotY;
 
+    // 0 = chưa kết thúc, 1 = Liberation (phá huỷ), 2 = Corruption (hấp thụ)
+    public int endingChoice;
+
     public GameSave() {
         soundVolume = 1;
         musicVolume = 0;
         vibrateAmount = 0;
         stonePercent = new float[4];
         hasHubPosition = false;
+        endingChoice = 0;
     }
 }

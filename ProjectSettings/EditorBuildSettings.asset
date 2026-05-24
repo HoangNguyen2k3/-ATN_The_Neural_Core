@@ -35,6 +35,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Game/_Scene/_Island3/Island3_Gameplay.unity
     guid: d0e582907e39927449469afd8b63f243
+  - enabled: 1
+    path: Assets/_Game/_Scene/FinalScene.unity
+    guid: cfe28e394e579a1408629b693daf38d5
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

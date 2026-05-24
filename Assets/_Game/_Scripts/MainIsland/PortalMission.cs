@@ -27,9 +27,9 @@ public class PortalMission : MonoBehaviour {
     [Header("Cấu hình Scene")]
     public CurrentIsland currentIsland;
 
-    [Header("Final Boss Teleport (chỉ dùng khi stoneIndex == -2)")]
-    [Tooltip("Transform đích để teleport player đến trong scene hiện tại")]
-    public Transform teleportDestination;
+    [Header("Final Boss Scene (chỉ dùng khi stoneIndex == -2)")]
+    [Tooltip("Tên scene riêng cho chuỗi kết thúc game")]
+    public string finalArenaSceneName = "FinalArena";
 
     [Header("=============Island1================")]
     public int numberOfLevel = 0;
@@ -69,9 +69,9 @@ public class PortalMission : MonoBehaviour {
     }
 
     public void TransportToMission() {
-        // Final Boss portal: teleport player đến vị trí trong scene hiện tại
+        // Final Boss portal: load scene riêng cho chuỗi kết thúc
         if (stoneIndex == -2) {
-            TeleportPlayerToFinalBoss();
+            LoadFinalArenaScene();
             return;
         }
 
@@ -86,34 +86,19 @@ public class PortalMission : MonoBehaviour {
         }
     }
 
-    private void TeleportPlayerToFinalBoss() {
-        if (teleportDestination == null) {
-            Debug.LogWarning("[FinalBossPortal] Chưa gán teleportDestination!");
-            return;
-        }
-
+    private void LoadFinalArenaScene() {
+        // Lưu vị trí hub trước khi chuyển scene
         GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null) {
-            Debug.LogWarning("[FinalBossPortal] Không tìm thấy Player (tag 'Player')!");
-            return;
-        }
-
-        // Lưu vị trí hiện tại trước khi dịch chuyển
-        if (DataManager.Ins != null && DataManager.Ins.isLoaded)
+        if (player != null && DataManager.Ins != null && DataManager.Ins.isLoaded)
             DataManager.Ins.SaveHubPosition(player.transform.position, player.transform.eulerAngles.y);
 
-        // CharacterController phải tắt trước khi đổi position
-        CharacterController cc = player.GetComponent<CharacterController>();
-        if (cc != null) cc.enabled = false;
-
-        player.transform.position = teleportDestination.position;
-        player.transform.rotation = teleportDestination.rotation;
-
-        if (cc != null) cc.enabled = true;
-
         PortalUIManager.Instance.HideDialog();
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.None;
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.ShowFakeLoadingGame(finalArenaSceneName);
+        else
+            UnityEngine.SceneManagement.SceneManager.LoadScene(finalArenaSceneName);
     }
 
     public void SetupDataToMission() {

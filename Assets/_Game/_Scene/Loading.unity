@@ -634,6 +634,7 @@ MonoBehaviour:
     hubPosY: 0
     hubPosZ: 0
     hubRotY: 0
+    endingChoice: 0
 --- !u!1 &586098346
 GameObject:
   m_ObjectHideFlags: 0
@@ -901,7 +902,7 @@ MonoBehaviour:
   dataManager: {fileID: 445567692}
   numberLevel: 0
   gameDataConfig: {fileID: 11400000, guid: 013e77f04a8ca5147a557d7fb061106e, type: 2}
-  bool_isMobile: 1
+  bool_isMobile: 0
 --- !u!4 &798275754
 Transform:
   m_ObjectHideFlags: 0

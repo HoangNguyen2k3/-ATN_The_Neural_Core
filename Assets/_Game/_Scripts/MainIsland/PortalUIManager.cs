@@ -51,14 +51,16 @@ public class PortalUIManager : MonoBehaviour {
             // Final Boss portal: hiện trạng thái cả 4 đá
             if (stoneStatusText != null)
                 stoneStatusText.text = BuildFinalBossStatus();
-        } else if (currentPortal.stoneIndex >= 0) {
+        }
+        else if (currentPortal.stoneIndex >= 0) {
             float pct = currentPortal.stoneFillPercent;
             int pctInt = Mathf.RoundToInt(pct * 100f);
             if (stoneStatusText != null)
                 stoneStatusText.text = pctInt > 0
                     ? $"Memory Stone: {StoneBar(pct)} {pctInt}%"
                     : "Memory Stone: --";
-        } else {
+        }
+        else {
             if (stoneStatusText != null) stoneStatusText.text = "";
         }
 
@@ -69,7 +71,8 @@ public class PortalUIManager : MonoBehaviour {
                 ? "Thu thập đủ 4 viên đá 100% để mở khoá"
                 : currentPortal.myTextData.unlockCondition;
             confirmButton.interactable = false;
-        } else {
+        }
+        else {
             statusText.text = "Status: UnLock";
             conditionText.text = "Condition: Passed";
             confirmButton.interactable = true;
@@ -92,7 +95,7 @@ public class PortalUIManager : MonoBehaviour {
         for (int i = 0; i < 4; i++) {
             float p = DataManager.Ins.GetStonePercent(i);
             int pInt = Mathf.RoundToInt(p * 100f);
-            result += p >= 1f ? $"[✓] {names[i]}: 100%\n" : $"[✗] {names[i]}: {pInt}%\n";
+            result += p >= 1f ? $"100%_" : $"{pInt}%_";
         }
         return result.TrimEnd();
     }

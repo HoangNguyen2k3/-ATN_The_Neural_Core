@@ -175,10 +175,14 @@ public class AdaptiveBossAgent : Agent {
     public override void OnActionReceived(ActionBuffers actions) {
         if (rb == null) return;
 
+        // ─── Bắt đầu đo thời gian xử lý AI (cho PerformanceMonitor) ───
+        PerformanceMonitor.Ins?.BeginAgentMeasure();
+
         // Đóng băng khi không đang Fighting
         if (arenaManager != null && !arenaManager.IsFighting) {
             currentMoveInput = 0f;
             currentTurnInput = 0f;
+            PerformanceMonitor.Ins?.EndAgentMeasure();
             return;
         }
 
@@ -197,6 +201,9 @@ public class AdaptiveBossAgent : Agent {
         if (MaxStep > 0) {
             AddReward(-1f / MaxStep);
         }
+
+        // ─── Kết thúc đo thời gian xử lý AI ───
+        PerformanceMonitor.Ins?.EndAgentMeasure();
     }
 
     void FixedUpdate() {

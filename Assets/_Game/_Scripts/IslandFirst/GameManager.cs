@@ -57,7 +57,12 @@ namespace Aircraft {
         public void GoToScene(string sceneName) {
             canvasLoading.SetActive(true);
             ui_fakeLoading.OnLoadComplete = () => canvasLoading.SetActive(false);
-            ui_fakeLoading.ShowRealLoading(sceneName);
+
+            // Đo thời gian load scene — kết quả hiện trên PerformanceMonitor overlay
+            if (PerformanceMonitor.Ins != null)
+                PerformanceMonitor.Ins.LoadSceneWithTimer(sceneName);
+            else
+                ui_fakeLoading.ShowRealLoading(sceneName);
         }
 
         // Giữ lại để backward-compatible, redirect sang GoToScene
